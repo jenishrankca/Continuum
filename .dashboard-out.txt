@@ -1,5 +1,0 @@
-Continuum dashboard: http://127.0.0.1:8765/
-Root: C:\Users\jenis\App\Continuum
-Press Ctrl+C to stop.
-INFO:     127.0.0.1:57747 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57747 - "GET /projects/roller-skating-snl HTTP/1.1" 200 OK

@@ -17,3 +17,7 @@ projects/*/output/
 
 # Keep project metadata tracked
 !projects/**/project.yaml
+
+.dashboard-out.txt
+.dashboard-err.txt
+
