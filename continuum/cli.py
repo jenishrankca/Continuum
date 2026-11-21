@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .project import Project, StyleBible, SCHEMA_VERSION
 from . import bible
+from . import ledger
 from . import detect, review, shots as shots_module, lint, render_markdown, render_html
 from . import migrate as migrate_module
 from . import paths
@@ -153,6 +154,11 @@ def cmd_status(args: argparse.Namespace) -> None:
     print(f"Bible:       {len(project.characters)} characters, "
           f"{len(project.locations)} locations, {len(project.props)} props")
     print(f"Shots:       {shots_prompted}/{shots_total} fully detailed")
+    print(
+        f"Ledger:      {len(project.continuity_states)} states, "
+        f"{len(project.continuity_exceptions)} exceptions, "
+        f"{len(project.ledger_history)} history"
+    )
 
 
 def cmd_migrate(args: argparse.Namespace) -> None:
@@ -285,6 +291,172 @@ def cmd_bible(args: argparse.Namespace) -> None:
         return
 
     raise SystemExit(f"Unknown bible action: {action}")
+
+
+def cmd_ledger(args: argparse.Namespace) -> None:
+    root = Path.cwd()
+    project = Project.load(root, args.slug)
+    action = args.ledger_action
+
+    if action == "list":
+        print(ledger.summarize_ledger(project))
+        return
+
+    if action == "show":
+        if args.scene is not None:
+            state = ledger.get_state_for_scene(project, args.scene)
+            if state is None:
+                print(f"No continuity state for scene {args.scene}")
+                return
+            print(ledger.format_state(state))
+            return
+        if args.shot:
+            state = ledger.get_state_for_shot(project, args.shot)
+            if state is None:
+                print(f"No continuity state for shot {args.shot}")
+                return
+            print(ledger.format_state(state))
+            return
+        raise SystemExit("Provide --scene N or --shot ID")
+
+    if action == "history":
+        rows = project.ledger_history
+        if args.limit:
+            rows = rows[-args.limit :]
+        if not rows:
+            print("No ledger history yet.")
+            return
+        for entry in rows:
+            print(f"{entry.ts}  {entry.action}  [{entry.actor}]  {entry.summary}")
+        return
+
+    if action == "query-character":
+        for row in ledger.query_character(project, args.id):
+            print(
+                f"{row['scope']} scene={row['scene_index']} shot={row['shot_id'] or '—'} "
+                f"wardrobe={row['wardrobe'] or '—'} holding={row['holding_prop_ids']}"
+            )
+        return
+
+    if action == "query-prop":
+        for row in ledger.query_prop(project, args.id):
+            print(
+                f"{row['scope']} scene={row['scene_index']} shot={row['shot_id'] or '—'} "
+                f"at={row['location_note'] or '—'} owner={row['owner_character_id'] or '—'}"
+            )
+        return
+
+    if action == "set-character":
+        state = (
+            ledger.ensure_scene_state(project, args.scene, actor="cli")
+            if args.scene is not None
+            else ledger.ensure_shot_state(project, args.shot, actor="cli")
+        )
+        holding = args.holding.split(",") if args.holding else None
+        if holding is not None:
+            holding = [h.strip() for h in holding if h.strip()]
+        cs = ledger.set_character_state(
+            project,
+            state,
+            character_id=args.character,
+            wardrobe=args.wardrobe,
+            appearance=args.appearance,
+            holding_prop_ids=holding,
+            notes=args.notes,
+            actor="cli",
+        )
+        project.save(root)
+        print(f"Updated character {cs.character_id} on {state.state_id}")
+        return
+
+    if action == "set-location":
+        state = (
+            ledger.ensure_scene_state(project, args.scene, actor="cli")
+            if args.scene is not None
+            else ledger.ensure_shot_state(project, args.shot, actor="cli")
+        )
+        ls = ledger.set_location_state(
+            project,
+            state,
+            location_id=args.location,
+            time_of_day=args.time_of_day,
+            notes=args.notes,
+            actor="cli",
+        )
+        project.save(root)
+        print(f"Updated location {ls.location_id} on {state.state_id}")
+        return
+
+    if action == "set-prop":
+        state = (
+            ledger.ensure_scene_state(project, args.scene, actor="cli")
+            if args.scene is not None
+            else ledger.ensure_shot_state(project, args.shot, actor="cli")
+        )
+        ps = ledger.set_prop_state(
+            project,
+            state,
+            prop_id=args.prop,
+            location_note=args.at,
+            owner_character_id=args.owner,
+            notes=args.notes,
+            clear_owner=args.clear_owner,
+            actor="cli",
+        )
+        project.save(root)
+        print(f"Updated prop {ps.prop_id} on {state.state_id}")
+        return
+
+    if action == "copy":
+        if args.from_scene is not None:
+            src = ledger.get_state_for_scene(project, args.from_scene)
+            if src is None:
+                raise SystemExit(f"No state for scene {args.from_scene}")
+        elif args.from_shot:
+            src = ledger.get_state_for_shot(project, args.from_shot)
+            if src is None:
+                raise SystemExit(f"No state for shot {args.from_shot}")
+        else:
+            raise SystemExit("Provide --from-scene or --from-shot")
+        if args.to_scene is not None:
+            dest = ledger.copy_state(
+                project, from_state=src, to_scope="scene", to_scene_index=args.to_scene, actor="cli"
+            )
+        elif args.to_shot:
+            dest = ledger.copy_state(
+                project, from_state=src, to_scope="shot", to_shot_id=args.to_shot, actor="cli"
+            )
+        else:
+            raise SystemExit("Provide --to-scene or --to-shot")
+        project.save(root)
+        print(f"Copied {src.state_id} -> {dest.state_id}")
+        return
+
+    if action == "exception":
+        fields = [f.strip() for f in (args.fields or "").split(",") if f.strip()]
+        exc = ledger.add_exception(
+            project,
+            from_scope=args.from_scope,
+            from_ref=args.from_ref,
+            to_scope=args.to_scope,
+            to_ref=args.to_ref,
+            reason=args.reason,
+            fields_changed=fields,
+            actor="cli",
+        )
+        project.save(root)
+        print(f"Added exception {exc.exception_id} (pending approval)")
+        return
+
+    if action == "approve-exception":
+        exc = ledger.approve_exception(
+            project, args.id, approved_by=args.by, actor="cli"
+        )
+        project.save(root)
+        print(f"Approved {exc.exception_id} by {exc.approved_by} at {exc.approved_at}")
+        return
+
+    raise SystemExit(f"Unknown ledger action: {action}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -437,6 +609,92 @@ def build_parser() -> argparse.ArgumentParser:
         help="Replace character/prop lists instead of merging",
     )
     p_link.set_defaults(func=cmd_bible)
+
+    p_ledger = sub.add_parser("ledger", help="Continuity ledger / scene-shot state (Stage 4)")
+    ledger_sub = p_ledger.add_subparsers(dest="ledger_action", required=True)
+
+    def _scope_target(p: argparse.ArgumentParser) -> None:
+        g = p.add_mutually_exclusive_group(required=True)
+        g.add_argument("--scene", type=int, help="Scene index")
+        g.add_argument("--shot", help="Shot id")
+
+    p_ll = ledger_sub.add_parser("list", help="Summarize ledger")
+    p_ll.add_argument("slug")
+    p_ll.set_defaults(func=cmd_ledger)
+
+    p_ls = ledger_sub.add_parser("show", help="Show state for a scene or shot")
+    p_ls.add_argument("slug")
+    _scope_target(p_ls)
+    p_ls.set_defaults(func=cmd_ledger)
+
+    p_lh = ledger_sub.add_parser("history", help="Show append-only ledger history")
+    p_lh.add_argument("slug")
+    p_lh.add_argument("--limit", type=int, default=50)
+    p_lh.set_defaults(func=cmd_ledger)
+
+    p_qc = ledger_sub.add_parser("query-character", help="Where a character appears in the ledger")
+    p_qc.add_argument("slug")
+    p_qc.add_argument("--id", required=True, help="character id")
+    p_qc.set_defaults(func=cmd_ledger)
+
+    p_qp = ledger_sub.add_parser("query-prop", help="Where a prop appears in the ledger")
+    p_qp.add_argument("slug")
+    p_qp.add_argument("--id", required=True, help="prop id")
+    p_qp.set_defaults(func=cmd_ledger)
+
+    p_sc = ledger_sub.add_parser("set-character", help="Set character state on a scene/shot")
+    p_sc.add_argument("slug")
+    _scope_target(p_sc)
+    p_sc.add_argument("--character", required=True)
+    p_sc.add_argument("--wardrobe", default=None)
+    p_sc.add_argument("--appearance", default=None)
+    p_sc.add_argument("--holding", default=None, help="Comma-separated prop ids")
+    p_sc.add_argument("--notes", default=None)
+    p_sc.set_defaults(func=cmd_ledger)
+
+    p_sl = ledger_sub.add_parser("set-location", help="Set location state on a scene/shot")
+    p_sl.add_argument("slug")
+    _scope_target(p_sl)
+    p_sl.add_argument("--location", required=True)
+    p_sl.add_argument("--time-of-day", default=None)
+    p_sl.add_argument("--notes", default=None)
+    p_sl.set_defaults(func=cmd_ledger)
+
+    p_sp = ledger_sub.add_parser("set-prop", help="Set prop state on a scene/shot")
+    p_sp.add_argument("slug")
+    _scope_target(p_sp)
+    p_sp.add_argument("--prop", required=True)
+    p_sp.add_argument("--at", default=None, help="Where the prop is")
+    p_sp.add_argument("--owner", default=None, help="owner character id")
+    p_sp.add_argument("--clear-owner", action="store_true")
+    p_sp.add_argument("--notes", default=None)
+    p_sp.set_defaults(func=cmd_ledger)
+
+    p_cp = ledger_sub.add_parser("copy", help="Copy state to another scene/shot")
+    p_cp.add_argument("slug")
+    src = p_cp.add_mutually_exclusive_group(required=True)
+    src.add_argument("--from-scene", type=int)
+    src.add_argument("--from-shot")
+    dest = p_cp.add_mutually_exclusive_group(required=True)
+    dest.add_argument("--to-scene", type=int)
+    dest.add_argument("--to-shot")
+    p_cp.set_defaults(func=cmd_ledger)
+
+    p_ex = ledger_sub.add_parser("exception", help="Record intentional continuity exception")
+    p_ex.add_argument("slug")
+    p_ex.add_argument("--from-scope", required=True, choices=["scene", "shot"])
+    p_ex.add_argument("--from-ref", required=True)
+    p_ex.add_argument("--to-scope", required=True, choices=["scene", "shot"])
+    p_ex.add_argument("--to-ref", required=True)
+    p_ex.add_argument("--reason", required=True)
+    p_ex.add_argument("--fields", default="", help="Comma-separated field names changed")
+    p_ex.set_defaults(func=cmd_ledger)
+
+    p_ae = ledger_sub.add_parser("approve-exception", help="Approve a continuity exception")
+    p_ae.add_argument("slug")
+    p_ae.add_argument("--id", required=True, help="exception_id")
+    p_ae.add_argument("--by", default="jay", help="Approver name (default jay)")
+    p_ae.set_defaults(func=cmd_ledger)
 
     return parser
 

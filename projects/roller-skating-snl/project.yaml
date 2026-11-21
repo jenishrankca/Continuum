@@ -1,4 +1,4 @@
-schema_version: 3
+schema_version: 4
 slug: roller-skating-snl
 style:
   project_name: Roller Skating SNL Sketch
@@ -734,6 +734,7 @@ shots:
   character_ids: []
   location_id: set_office_floor
   prop_ids: []
+  continuity_state_id: null
 - id: shot_002
   order: 2
   label: Coworker glides in, all confidence
@@ -752,6 +753,7 @@ shots:
   - coworker_ref
   location_id: null
   prop_ids: []
+  continuity_state_id: null
 - id: shot_003
   order: 3
   label: The intern joins in, oblivious and on a call
@@ -770,6 +772,7 @@ shots:
   - intern_ref
   location_id: null
   prop_ids: []
+  continuity_state_id: null
 - id: shot_004
   order: 4
   label: Sarah clocks the danger
@@ -789,6 +792,7 @@ shots:
   - coworker_alarmed_ref
   location_id: null
   prop_ids: []
+  continuity_state_id: null
 - id: shot_005
   order: 5
   label: Sarah reacts in horror
@@ -807,6 +811,7 @@ shots:
   - coworker_alarmed_ref
   location_id: null
   prop_ids: []
+  continuity_state_id: null
 - id: shot_006
   order: 6
   label: Kevin skates the edge, totally unaware
@@ -827,6 +832,7 @@ shots:
   location_id: null
   prop_ids:
   - danger_sign_ref
+  continuity_state_id: null
 - id: shot_007
   order: 7
   label: The near-miss recovery
@@ -846,6 +852,7 @@ shots:
   - intern_edge_ref
   location_id: null
   prop_ids: []
+  continuity_state_id: null
 characters:
 - id: coworker_ref
   name: Sarah from HR skating backward
@@ -936,3 +943,202 @@ props:
     notes: Wide shot of the unfinished floor edge with a DANGER sign and missing railing
       tape
   approved: false
+continuity_states:
+- state_id: state-4c27ff1e05
+  scope: scene
+  scene_index: 0
+  shot_id: null
+  character_states:
+  - character_id: coworker_ref
+    wardrobe: office casual
+    appearance: ''
+    holding_prop_ids: []
+    notes: ''
+  location_state:
+    location_id: set_office_floor
+    time_of_day: day
+    notes: ''
+  prop_states:
+  - prop_id: danger_sign_ref
+    location_note: on wall
+    owner_character_id: null
+    notes: ''
+  notes: ''
+  created_at: '2026-11-21T06:48:02Z'
+  updated_at: '2026-11-21T06:48:02Z'
+- state_id: state-502f7e5869
+  scope: scene
+  scene_index: 1
+  shot_id: null
+  character_states:
+  - character_id: coworker_ref
+    wardrobe: office casual
+    appearance: ''
+    holding_prop_ids: []
+    notes: ''
+  location_state:
+    location_id: set_office_floor
+    time_of_day: day
+    notes: ''
+  prop_states:
+  - prop_id: danger_sign_ref
+    location_note: held by coworker
+    owner_character_id: coworker_ref
+    notes: ''
+  notes: ''
+  created_at: '2026-11-21T06:48:02Z'
+  updated_at: '2026-11-21T06:48:02Z'
+continuity_exceptions:
+- exception_id: exc-e4918b35c7
+  from_scope: scene
+  from_ref: '0'
+  to_scope: scene
+  to_ref: '1'
+  reason: Sign moves into coworker hands between beats (intentional)
+  fields_changed:
+  - prop.location_note
+  - prop.owner
+  approved: true
+  approved_at: '2026-11-21'
+  approved_by: jay
+  created_at: '2026-11-21T06:48:02Z'
+ledger_history:
+- entry_id: hist-d83c2398f9
+  ts: '2026-11-21T06:48:02Z'
+  action: create_state
+  actor: tech-lead
+  summary: Created continuity state for scene 0
+  payload:
+    state_id: state-4c27ff1e05
+    scope: scene
+    scene_index: 0
+- entry_id: hist-7d2bb9b692
+  ts: '2026-11-21T06:48:02Z'
+  action: set_character_state
+  actor: tech-lead
+  summary: Set character coworker_ref on state-4c27ff1e05
+  payload:
+    state_id: state-4c27ff1e05
+    before: null
+    after:
+      character_id: coworker_ref
+      wardrobe: office casual
+      appearance: ''
+      holding_prop_ids: []
+      notes: ''
+- entry_id: hist-23c40e7d23
+  ts: '2026-11-21T06:48:02Z'
+  action: set_location_state
+  actor: tech-lead
+  summary: Set location set_office_floor on state-4c27ff1e05
+  payload:
+    state_id: state-4c27ff1e05
+    before: null
+    after:
+      location_id: set_office_floor
+      time_of_day: day
+      notes: ''
+- entry_id: hist-12ee718783
+  ts: '2026-11-21T06:48:02Z'
+  action: set_prop_state
+  actor: tech-lead
+  summary: Set prop danger_sign_ref on state-4c27ff1e05
+  payload:
+    state_id: state-4c27ff1e05
+    before: null
+    after:
+      prop_id: danger_sign_ref
+      location_note: on wall
+      owner_character_id: null
+      notes: ''
+- entry_id: hist-9fbd37a3d7
+  ts: '2026-11-21T06:48:02Z'
+  action: create_state
+  actor: tech-lead
+  summary: Created continuity state for scene 1
+  payload:
+    state_id: state-502f7e5869
+    scope: scene
+    scene_index: 1
+- entry_id: hist-51ac96cfe8
+  ts: '2026-11-21T06:48:02Z'
+  action: transition
+  actor: tech-lead
+  summary: Copied state state-4c27ff1e05 -> state-502f7e5869
+  payload:
+    from_state_id: state-4c27ff1e05
+    to_state_id: state-502f7e5869
+    to_scope: scene
+    to_scene_index: 1
+    to_shot_id: null
+- entry_id: hist-df86b9d65e
+  ts: '2026-11-21T06:48:02Z'
+  action: set_prop_state
+  actor: tech-lead
+  summary: Set prop danger_sign_ref on state-502f7e5869
+  payload:
+    state_id: state-502f7e5869
+    before:
+      prop_id: danger_sign_ref
+      location_note: on wall
+      owner_character_id: null
+      notes: ''
+    after:
+      prop_id: danger_sign_ref
+      location_note: held by coworker
+      owner_character_id: coworker_ref
+      notes: ''
+- entry_id: hist-d4626c2c04
+  ts: '2026-11-21T06:48:02Z'
+  action: add_exception
+  actor: tech-lead
+  summary: 'Exception exc-e4918b35c7: Sign moves into coworker hands between beats
+    (intentional)'
+  payload:
+    exception_id: exc-e4918b35c7
+    from_scope: scene
+    from_ref: '0'
+    to_scope: scene
+    to_ref: '1'
+    reason: Sign moves into coworker hands between beats (intentional)
+    fields_changed:
+    - prop.location_note
+    - prop.owner
+    approved: false
+    approved_at: null
+    approved_by: ''
+    created_at: '2026-11-21T06:48:02Z'
+- entry_id: hist-47e7b21c7c
+  ts: '2026-11-21T06:48:02Z'
+  action: approve_exception
+  actor: tech-lead
+  summary: Approved exception exc-e4918b35c7 by jay
+  payload:
+    before:
+      exception_id: exc-e4918b35c7
+      from_scope: scene
+      from_ref: '0'
+      to_scope: scene
+      to_ref: '1'
+      reason: Sign moves into coworker hands between beats (intentional)
+      fields_changed:
+      - prop.location_note
+      - prop.owner
+      approved: false
+      approved_at: null
+      approved_by: ''
+      created_at: '2026-11-21T06:48:02Z'
+    after:
+      exception_id: exc-e4918b35c7
+      from_scope: scene
+      from_ref: '0'
+      to_scope: scene
+      to_ref: '1'
+      reason: Sign moves into coworker hands between beats (intentional)
+      fields_changed:
+      - prop.location_note
+      - prop.owner
+      approved: true
+      approved_at: '2026-11-21'
+      approved_by: jay
+      created_at: '2026-11-21T06:48:02Z'

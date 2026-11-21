@@ -45,7 +45,7 @@ def _load_board_items(root: Path) -> list[dict[str, Any]]:
     for path in sorted(board.rglob("*.md")):
         if path.name.startswith("."):
             continue
-        text = path.read_text(encoding="utf-8")
+        text = path.read_text(encoding="utf-8", errors="replace")
         meta = _parse_frontmatter(text)
         if not meta.get("id"):
             continue

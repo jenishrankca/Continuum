@@ -24,3 +24,5 @@
 {"ts":"2026-11-21T07:18:30Z","agent":"ceo","event":"stop","item":"20261121-13","summary":"Stage 8 Comfy/A1111 blocked; no local models; Jay gate"}
 {"ts":"2026-11-21T07:19:00Z","agent":"ceo","event":"stop","item":"20261121-14","summary":"Stage 9 video gen parked after Stage 8"}
 {"ts":"2026-11-21T07:20:00Z","agent":"ceo","event":"stop","item":null,"summary":"Allocation complete; rebuild Studio HTML dashboard"}
+{"ts":"2026-11-21T07:50:00Z","agent":"tech-lead","event":"stop","item":"20261121-09","summary":"Stage 4 ledger schema 4 + CLI + tests; sample seeded"}
+{"ts":"2026-11-21T07:51:00Z","agent":"ceo","event":"stop","item":"20261121-10","summary":"Unblocked Stage 5 inspection after Stage 4 close"}

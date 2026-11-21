@@ -11,7 +11,8 @@ from . import paths
 
 # schema_version 2: root-relative paths
 # schema_version 3: character / location / prop bible entities
-SCHEMA_VERSION = 3
+# schema_version 4: continuity ledger + scene/shot state + exceptions + history
+SCHEMA_VERSION = 4
 
 
 @dataclass
@@ -116,6 +117,78 @@ class Shot:
     character_ids: list[str] = field(default_factory=list)
     location_id: Optional[str] = None
     prop_ids: list[str] = field(default_factory=list)
+    continuity_state_id: Optional[str] = None
+
+
+@dataclass
+class CharacterState:
+    """What is true about a character at a ledger point."""
+
+    character_id: str
+    wardrobe: str = ""
+    appearance: str = ""
+    holding_prop_ids: list[str] = field(default_factory=list)
+    notes: str = ""
+
+
+@dataclass
+class LocationState:
+    location_id: str
+    time_of_day: str = ""
+    notes: str = ""
+
+
+@dataclass
+class PropState:
+    prop_id: str
+    location_note: str = ""
+    owner_character_id: Optional[str] = None
+    notes: str = ""
+
+
+@dataclass
+class ContinuityState:
+    """Continuity facts attached to a scene or shot."""
+
+    state_id: str
+    scope: str  # "scene" | "shot"
+    scene_index: Optional[int] = None
+    shot_id: Optional[str] = None
+    character_states: list[CharacterState] = field(default_factory=list)
+    location_state: Optional[LocationState] = None
+    prop_states: list[PropState] = field(default_factory=list)
+    notes: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+
+@dataclass
+class ContinuityException:
+    """Intentional continuity break; only approved exceptions silence inspection later."""
+
+    exception_id: str
+    from_scope: str
+    from_ref: str
+    to_scope: str
+    to_ref: str
+    reason: str
+    fields_changed: list[str] = field(default_factory=list)
+    approved: bool = False
+    approved_at: Optional[str] = None
+    approved_by: str = ""
+    created_at: str = ""
+
+
+@dataclass
+class LedgerHistoryEntry:
+    """Append-only audit row. Do not mutate after append."""
+
+    entry_id: str
+    ts: str
+    action: str
+    actor: str
+    summary: str
+    payload: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -130,6 +203,9 @@ class Project:
     characters: list[Character] = field(default_factory=list)
     locations: list[Location] = field(default_factory=list)
     props: list[Prop] = field(default_factory=list)
+    continuity_states: list[ContinuityState] = field(default_factory=list)
+    continuity_exceptions: list[ContinuityException] = field(default_factory=list)
+    ledger_history: list[LedgerHistoryEntry] = field(default_factory=list)
 
     @staticmethod
     def project_dir(root: Path, slug: str) -> Path:
@@ -245,6 +321,7 @@ class Project:
                     character_ids=list(sh.get("character_ids") or []),
                     location_id=sh.get("location_id"),
                     prop_ids=list(sh.get("prop_ids") or []),
+                    continuity_state_id=sh.get("continuity_state_id"),
                 )
             )
         characters = [
@@ -281,6 +358,36 @@ class Project:
             )
             for p in data.get("props", []) or []
         ]
+        continuity_states = [
+            Project._parse_continuity_state(raw) for raw in data.get("continuity_states") or []
+        ]
+        continuity_exceptions = [
+            ContinuityException(
+                exception_id=e["exception_id"],
+                from_scope=e["from_scope"],
+                from_ref=str(e["from_ref"]),
+                to_scope=e["to_scope"],
+                to_ref=str(e["to_ref"]),
+                reason=e.get("reason", "") or "",
+                fields_changed=list(e.get("fields_changed") or []),
+                approved=bool(e.get("approved", False)),
+                approved_at=e.get("approved_at"),
+                approved_by=e.get("approved_by", "") or "",
+                created_at=e.get("created_at", "") or "",
+            )
+            for e in data.get("continuity_exceptions") or []
+        ]
+        ledger_history = [
+            LedgerHistoryEntry(
+                entry_id=h["entry_id"],
+                ts=h["ts"],
+                action=h["action"],
+                actor=h.get("actor", "") or "",
+                summary=h.get("summary", "") or "",
+                payload=dict(h.get("payload") or {}),
+            )
+            for h in data.get("ledger_history") or []
+        ]
         return Project(
             schema_version=data.get("schema_version", 1),
             slug=data["slug"],
@@ -292,6 +399,51 @@ class Project:
             characters=characters,
             locations=locations,
             props=props,
+            continuity_states=continuity_states,
+            continuity_exceptions=continuity_exceptions,
+            ledger_history=ledger_history,
+        )
+
+    @staticmethod
+    def _parse_continuity_state(raw: dict[str, Any]) -> ContinuityState:
+        loc_raw = raw.get("location_state")
+        location_state = None
+        if isinstance(loc_raw, dict) and loc_raw.get("location_id"):
+            location_state = LocationState(
+                location_id=loc_raw["location_id"],
+                time_of_day=loc_raw.get("time_of_day", "") or "",
+                notes=loc_raw.get("notes", "") or "",
+            )
+        character_states = [
+            CharacterState(
+                character_id=c["character_id"],
+                wardrobe=c.get("wardrobe", "") or "",
+                appearance=c.get("appearance", "") or "",
+                holding_prop_ids=list(c.get("holding_prop_ids") or []),
+                notes=c.get("notes", "") or "",
+            )
+            for c in raw.get("character_states") or []
+        ]
+        prop_states = [
+            PropState(
+                prop_id=p["prop_id"],
+                location_note=p.get("location_note", "") or "",
+                owner_character_id=p.get("owner_character_id"),
+                notes=p.get("notes", "") or "",
+            )
+            for p in raw.get("prop_states") or []
+        ]
+        return ContinuityState(
+            state_id=raw["state_id"],
+            scope=raw["scope"],
+            scene_index=raw.get("scene_index"),
+            shot_id=raw.get("shot_id"),
+            character_states=character_states,
+            location_state=location_state,
+            prop_states=prop_states,
+            notes=raw.get("notes", "") or "",
+            created_at=raw.get("created_at", "") or "",
+            updated_at=raw.get("updated_at", "") or "",
         )
 
     def get_scene(self, scene_index: int) -> Optional[DetectedScene]:

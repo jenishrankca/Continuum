@@ -40,10 +40,13 @@ python -m continuum generate-shotlist <slug> [--strict]
 python -m continuum status <slug>
 python -m continuum migrate <slug> [--dry-run]
 python -m continuum bible list <slug>
+python -m continuum ledger list <slug>
 python -m continuum dashboard [--host 127.0.0.1] [--port 8765]
 ```
 
-`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form, promotes character/location/prop bible entities, and bumps `schema_version` (currently 3). Use `--dry-run` first.
+`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form, promotes character/location/prop bible entities, initializes the continuity ledger (schema 4), and bumps `schema_version` (currently 4). Use `--dry-run` first.
+
+`ledger` records what is true at each scene/shot (character/wardrobe/prop/location), intentional exceptions with approval, and append-only history.
 
 ## Local dashboard
 

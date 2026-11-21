@@ -61,6 +61,8 @@ def _rewrite_all_paths(root: Path, raw: dict, rewritten: list[str]) -> None:
         shot.setdefault("prop_ids", [])
         if "location_id" not in shot:
             shot["location_id"] = None
+        if "continuity_state_id" not in shot:
+            shot["continuity_state_id"] = None
     for group in ("characters", "locations", "props"):
         for ent in raw.get(group, []) or []:
             eid = ent.get("id")
@@ -93,12 +95,17 @@ def migrate_project(root: Path, slug: str, *, dry_run: bool = False) -> MigrateR
     raw.setdefault("characters", [])
     raw.setdefault("locations", [])
     raw.setdefault("props", [])
+    raw.setdefault("continuity_states", [])
+    raw.setdefault("continuity_exceptions", [])
+    raw.setdefault("ledger_history", [])
 
     # Temporarily write so Project.load can promote (or work in-memory)
     raw["schema_version"] = SCHEMA_VERSION
     messages = list(rewritten)
     if from_version != SCHEMA_VERSION:
         messages.append(f"schema_version: {from_version} -> {SCHEMA_VERSION}")
+    if from_version < 4:
+        messages.append("Stage 4: continuity ledger lists initialized (empty until CLI writes)")
 
     bible_created: dict[str, int] | None = None
     if dry_run:
