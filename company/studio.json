@@ -1,6 +1,6 @@
 {
   "project": "Continuum",
-  "dashboard_url": "",
+  "dashboard_url": "company/dashboard/index.html",
   "dates": { "beta": "", "launch": "" },
   "kpi_sources": {
     "product": "python -m continuum status <slug>; lint via generate-shotlist --strict; open bugs on the board",
@@ -15,4 +15,3 @@
   "local_root": "C:\\Users\\jenis\\App\\Continuum",
   "studio_repo": "C:\\Users\\jenis\\App\\IWantThatApp-Studio"
 }
-

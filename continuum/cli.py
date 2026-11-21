@@ -173,6 +173,30 @@ def cmd_dashboard(args: argparse.Namespace) -> None:
     run_dashboard(host=args.host, port=args.port, root=Path.cwd())
 
 
+def cmd_studio_dashboard(args: argparse.Namespace) -> None:
+    from . import studio_dashboard as studio_dash
+
+    root = Path.cwd()
+    if args.serve:
+        path = studio_dash.rebuild(root)
+        print(f"Studio dashboard: {path}")
+        print(f"Serving http://{args.host}:{args.port}/ (Ctrl+C to stop)")
+        studio_dash.serve_dashboard(root, host=args.host, port=args.port, rebuild_first=False)
+        return
+
+    if args.open:
+        path = studio_dash.open_dashboard(root, rebuild_first=True)
+        print(f"Opened {path.resolve()}")
+        return
+
+    # Default / --rebuild: regenerate company/dashboard/
+    path = studio_dash.rebuild(root)
+    print(f"Wrote {path}")
+    print(f"Also wrote {studio_dash.dashboard_data_js_path(root)}")
+    print(f"Open: {path.resolve().as_uri()}")
+    print("Or: python -m continuum studio-dashboard --open")
+
+
 def cmd_bible(args: argparse.Namespace) -> None:
     root = Path.cwd()
     project = Project.load(root, args.slug)
@@ -326,6 +350,34 @@ def build_parser() -> argparse.ArgumentParser:
     p_dash.add_argument("--host", default="127.0.0.1")
     p_dash.add_argument("--port", type=int, default=8765)
     p_dash.set_defaults(func=cmd_dashboard)
+
+    p_studio = sub.add_parser(
+        "studio-dashboard",
+        help="Build/open local Studio CEO HTML under company/dashboard/ (file://)",
+    )
+    p_studio.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Regenerate index.html + data.js (default action)",
+    )
+    p_studio.add_argument(
+        "--open",
+        action="store_true",
+        help="Rebuild and open company/dashboard/index.html in the browser",
+    )
+    p_studio.add_argument(
+        "--serve",
+        action="store_true",
+        help="Serve company/dashboard/ on a tiny local HTTP server",
+    )
+    p_studio.add_argument("--host", default="127.0.0.1")
+    p_studio.add_argument(
+        "--port",
+        type=int,
+        default=8766,
+        help="Port for --serve (default 8766; product dashboard stays on 8765)",
+    )
+    p_studio.set_defaults(func=cmd_studio_dashboard)
 
     p_bible = sub.add_parser("bible", help="Manage character / location / prop bible")
     bible_sub = p_bible.add_subparsers(dest="bible_action", required=True)

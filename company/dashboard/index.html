@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Continuum · Studio Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #10140f;
+      --bg1: #1b231c;
+      --ink: #edf3ee;
+      --muted: #9aada0;
+      --line: rgba(237, 243, 238, 0.12);
+      --gold: #c4a35a;
+      --green: #7dba8e;
+      --warn: #d9895b;
+      --pad: clamp(1.2rem, 3vw, 2.4rem);
+      --max: 70rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      background:
+        radial-gradient(900px 480px at 0% 0%, rgba(125, 186, 142, 0.16), transparent 55%),
+        radial-gradient(700px 400px at 100% 10%, rgba(196, 163, 90, 0.12), transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1));
+      min-height: 100vh;
+    }
+    .wrap { width: min(100% - 2 * var(--pad), var(--max)); margin: 0 auto; padding: var(--pad) 0 3rem; }
+    h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(2rem, 4vw, 2.8rem); margin: 0 0 0.35rem; }
+    h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.25rem; margin: 2rem 0 0.75rem; }
+    .lede { color: var(--muted); max-width: 38rem; line-height: 1.5; margin: 0 0 1rem; }
+    .meta { color: var(--muted); font-size: 0.85rem; }
+    a { color: var(--gold); }
+    .grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin: 1.25rem 0; }
+    .stat { border-top: 1px solid var(--line); padding-top: 0.55rem; }
+    .stat strong { display: block; font-family: Fraunces, Georgia, serif; font-size: 1.4rem; }
+    .stat span { color: var(--muted); font-size: 0.78rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+    .pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0.1rem 0.45rem; font-size: 0.72rem; color: var(--muted); }
+    .pill.ok { color: var(--green); border-color: rgba(125,186,142,.35); }
+    .pill.warn { color: var(--warn); border-color: rgba(217,137,91,.4); }
+    .links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin: 1rem 0 0; }
+    .err { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="meta">IWantThatApp Studio · local artifact (not claude.ai)</p>
+    <h1 id="project">Continuum</h1>
+    <p class="lede" id="summary">Loading board…</p>
+    <p class="meta" id="updated"></p>
+    <div class="links">
+      <a id="product-link" href="http://127.0.0.1:8765/">Product dashboard (:8765)</a>
+      <span class="meta">Refresh data: <code>python -m continuum studio-dashboard --rebuild</code></span>
+    </div>
+
+    <div class="grid" id="kpis"></div>
+
+    <h2>Board</h2>
+    <table>
+      <thead>
+        <tr><th>Id</th><th>Title</th><th>Owner</th><th>Status</th><th>Jay</th><th>Updated</th></tr>
+      </thead>
+      <tbody id="items"></tbody>
+    </table>
+
+    <h2>Agents</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Status</th><th>Open</th><th>Last run</th></tr></thead>
+      <tbody id="agents"></tbody>
+    </table>
+
+    <h2>Activity</h2>
+    <table>
+      <thead><tr><th>When</th><th>Agent</th><th>Item</th><th>Summary</th></tr></thead>
+      <tbody id="activity"></tbody>
+    </table>
+  </main>
+  <script src="data.js"></script>
+  <script>
+    (function () {
+      var d = window.CONTINUUM_STUDIO_DASHBOARD;
+      if (!d) {
+        document.getElementById("summary").textContent =
+          "Missing data.js — run: python -m continuum studio-dashboard --rebuild";
+        document.getElementById("summary").className = "err";
+        return;
+      }
+      document.getElementById("project").textContent = d.project || "Continuum";
+      document.getElementById("summary").textContent =
+        (d.run && d.run.summary) || "Studio board";
+      document.getElementById("updated").textContent =
+        "Updated " + (d.updated || "") + (d.local_root ? " · " + d.local_root : "");
+      if (d.product_dashboard_url) {
+        document.getElementById("product-link").href = d.product_dashboard_url;
+      }
+
+      var kpis = document.getElementById("kpis");
+      (d.kpis || []).forEach(function (k) {
+        var el = document.createElement("div");
+        el.className = "stat";
+        el.innerHTML = "<strong></strong><span></span>";
+        el.querySelector("strong").textContent = String(k.value);
+        el.querySelector("span").textContent = k.label;
+        kpis.appendChild(el);
+      });
+
+      var itemsBody = document.getElementById("items");
+      var items = (d.items || []).slice().sort(function (a, b) {
+        if (!!a.done_folder !== !!b.done_folder) return a.done_folder ? 1 : -1;
+        return String(b.updated).localeCompare(String(a.updated));
+      });
+      items.forEach(function (it) {
+        var tr = document.createElement("tr");
+        var statusClass = it.status === "done" || it.done_folder ? "ok" :
+          (it.needs_jay ? "warn" : "");
+        tr.innerHTML =
+          "<td><code></code></td><td></td><td class='meta'></td>" +
+          "<td><span class='pill'></span></td><td></td><td class='meta'></td>";
+        tr.cells[0].querySelector("code").textContent = it.id;
+        tr.cells[1].textContent = it.title;
+        tr.cells[2].textContent = it.owner || "—";
+        var pill = tr.cells[3].querySelector(".pill");
+        pill.textContent = it.status;
+        if (statusClass) pill.classList.add(statusClass);
+        tr.cells[4].textContent = it.needs_jay ? "yes" : "—";
+        tr.cells[5].textContent = it.updated || "";
+        itemsBody.appendChild(tr);
+      });
+
+      var agentsBody = document.getElementById("agents");
+      (d.agents || []).forEach(function (a) {
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<td></td><td><span class='pill'></span></td><td></td><td class='meta'></td>";
+        tr.cells[0].textContent = a.name;
+        var pill = tr.cells[1].querySelector(".pill");
+        pill.textContent = a.status;
+        if (a.status === "idle") pill.classList.add("ok");
+        tr.cells[2].textContent = String(a.items_open || 0);
+        tr.cells[3].textContent = a.last_run || "";
+        agentsBody.appendChild(tr);
+      });
+
+      var actBody = document.getElementById("activity");
+      (d.activity || []).slice().reverse().forEach(function (row) {
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<td class='meta'></td><td></td><td class='meta'></td><td></td>";
+        tr.cells[0].textContent = row.at || "";
+        tr.cells[1].textContent = row.agent || "";
+        tr.cells[2].textContent = row.item || "";
+        tr.cells[3].textContent = row.summary || "";
+        actBody.appendChild(tr);
+      });
+    })();
+  </script>
+</body>
+</html>
