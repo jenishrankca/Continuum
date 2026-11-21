@@ -12,6 +12,7 @@ from . import intelligence
 from . import detect, review, shots as shots_module, lint, render_markdown, render_html
 from . import migrate as migrate_module
 from . import paths
+from . import shot_plan
 from .restyle import get_provider
 from .envfile import load_dotenv
 
@@ -172,6 +173,92 @@ def cmd_status(args: argparse.Namespace) -> None:
         f"({sum(1 for s in project.film_suggestions if s.uncertain)} uncertain), "
         f"{len(project.film_intelligence_runs)} runs"
     )
+    print(
+        f"Planning:    {sum(1 for s in project.shots if s.planning_approved)}/{shots_total} "
+        f"plan-approved; "
+        f"linked={sum(1 for s in project.shots if s.prev_shot_id or s.next_shot_id)}"
+    )
+
+
+def cmd_shot(args: argparse.Namespace) -> None:
+    root = Path.cwd()
+    project = Project.load(root, args.slug)
+    action = args.shot_action
+
+    if action == "list":
+        print(shot_plan.summarize_shots(project))
+        return
+
+    if action == "show":
+        shot = shot_plan.require_shot(project, args.id)
+        print(shot_plan.format_shot(shot, project.style))
+        return
+
+    if action == "set":
+        try:
+            shot = shot_plan.update_shot(
+                project,
+                args.id,
+                description=args.description,
+                label=args.label,
+                shot_type=args.shot_type,
+                camera_angle=args.camera_angle,
+                camera_move=args.camera_move,
+                lens_composition=args.lens,
+                subject_action=args.action,
+                dialogue_or_sound=args.dialogue,
+                duration_s=args.duration,
+                clear_duration=args.clear_duration,
+                prev_shot_id=args.prev,
+                next_shot_id=args.next,
+                clear_prev=args.clear_prev,
+                clear_next=args.clear_next,
+                continuity_state_id=args.continuity_state,
+                clear_continuity_state=args.clear_continuity_state,
+                start_keyframe_path=args.start_keyframe,
+                end_keyframe_path=args.end_keyframe,
+                clear_start_keyframe=args.clear_start_keyframe,
+                clear_end_keyframe=args.clear_end_keyframe,
+                image_prompt=args.image_prompt,
+                video_prompt=args.video_prompt,
+                notes=args.notes,
+            )
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        project.save(root)
+        print(f"Updated {shot.id}")
+        print(shot_plan.format_shot(shot, project.style))
+        return
+
+    if action == "link-sequence":
+        n = shot_plan.link_sequence(project, overwrite=args.overwrite)
+        project.save(root)
+        print(f"Linked prev/next for {n} shot(s) from order")
+        return
+
+    if action == "sync-prompts":
+        counts = shot_plan.sync_prompts(project, overwrite=args.overwrite)
+        project.save(root)
+        print(
+            f"Synced prompts: image={counts['image_prompt']} video={counts['video_prompt']} "
+            f"(overwrite={args.overwrite})"
+        )
+        return
+
+    if action == "approve":
+        try:
+            shot = shot_plan.approve_planning(project, args.id, approved_by=args.by)
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        project.save(root)
+        print(
+            f"Planning approved {shot.id} by {shot.planning_approved_by} "
+            f"at {shot.planning_approved_at} "
+            f"(continuity_approved still {shot.continuity_approved})"
+        )
+        return
+
+    raise SystemExit(f"Unknown shot action: {action}")
 
 
 def cmd_migrate(args: argparse.Namespace) -> None:
@@ -640,6 +727,82 @@ def build_parser() -> argparse.ArgumentParser:
     p_shots = sub.add_parser("shots", help="Assign shot type/camera/action/anchor per kept shot")
     p_shots.add_argument("slug")
     p_shots.set_defaults(func=cmd_shots)
+
+    p_shot = sub.add_parser(
+        "shot",
+        help="Stage 7 storyboard/shot planning (set fields, prev/next, prompts, approve)",
+    )
+    shot_sub = p_shot.add_subparsers(dest="shot_action", required=True)
+
+    p_shot_ls = shot_sub.add_parser("list", help="List shots with planning summary")
+    p_shot_ls.add_argument("slug")
+    p_shot_ls.set_defaults(func=cmd_shot)
+
+    p_shot_sh = shot_sub.add_parser("show", help="Show one shot's planning fields")
+    p_shot_sh.add_argument("slug")
+    p_shot_sh.add_argument("--id", required=True)
+    p_shot_sh.set_defaults(func=cmd_shot)
+
+    p_shot_set = shot_sub.add_parser("set", help="Set storyboard/planning fields on a shot")
+    p_shot_set.add_argument("slug")
+    p_shot_set.add_argument("--id", required=True)
+    p_shot_set.add_argument("--description", default=None)
+    p_shot_set.add_argument("--label", default=None)
+    p_shot_set.add_argument("--shot-type", default=None)
+    p_shot_set.add_argument("--camera-angle", default=None)
+    p_shot_set.add_argument("--camera-move", default=None)
+    p_shot_set.add_argument("--lens", default=None, help="Lens and composition guidance")
+    p_shot_set.add_argument("--action", default=None, help="Subject/action description")
+    p_shot_set.add_argument("--dialogue", default=None, help="Dialogue or sound requirements")
+    p_shot_set.add_argument("--duration", type=float, default=None, help="Duration in seconds")
+    p_shot_set.add_argument("--clear-duration", action="store_true")
+    p_shot_set.add_argument("--prev", default=None, help="Previous shot id dependency")
+    p_shot_set.add_argument("--next", default=None, help="Next shot id dependency")
+    p_shot_set.add_argument("--clear-prev", action="store_true")
+    p_shot_set.add_argument("--clear-next", action="store_true")
+    p_shot_set.add_argument("--continuity-state", default=None)
+    p_shot_set.add_argument("--clear-continuity-state", action="store_true")
+    p_shot_set.add_argument("--start-keyframe", default=None)
+    p_shot_set.add_argument("--end-keyframe", default=None)
+    p_shot_set.add_argument("--clear-start-keyframe", action="store_true")
+    p_shot_set.add_argument("--clear-end-keyframe", action="store_true")
+    p_shot_set.add_argument("--image-prompt", default=None)
+    p_shot_set.add_argument("--video-prompt", default=None)
+    p_shot_set.add_argument("--notes", default=None)
+    p_shot_set.set_defaults(func=cmd_shot)
+
+    p_shot_link = shot_sub.add_parser(
+        "link-sequence",
+        help="Set prev/next shot deps from order (skip shots that already have either set)",
+    )
+    p_shot_link.add_argument("slug")
+    p_shot_link.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Rewrite prev/next even when already set",
+    )
+    p_shot_link.set_defaults(func=cmd_shot)
+
+    p_shot_sync = shot_sub.add_parser(
+        "sync-prompts",
+        help="Fill empty image_prompt/video_prompt from the prompt builder",
+    )
+    p_shot_sync.add_argument("slug")
+    p_shot_sync.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace existing stored prompts",
+    )
+    p_shot_sync.set_defaults(func=cmd_shot)
+
+    p_shot_ap = shot_sub.add_parser(
+        "approve",
+        help="Approve storyboard/shot plan (does not set continuity_approved)",
+    )
+    p_shot_ap.add_argument("slug")
+    p_shot_ap.add_argument("--id", required=True)
+    p_shot_ap.add_argument("--by", default="jay")
+    p_shot_ap.set_defaults(func=cmd_shot)
 
     p_gen = sub.add_parser("generate-shotlist", help="Lint + render the markdown shot list and HTML storyboard")
     p_gen.add_argument("slug")

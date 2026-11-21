@@ -14,7 +14,8 @@ from . import paths
 # schema_version 4: continuity ledger + scene/shot state + exceptions + history
 # schema_version 5: continuity inspection checks + reports
 # schema_version 6: film intelligence suggestions (editable; never auto-fact)
-SCHEMA_VERSION = 6
+# schema_version 7: storyboard / shot planning fields (vision §7)
+SCHEMA_VERSION = 7
 
 CONTINUITY_STATUSES = (
     "not_checked",
@@ -134,6 +135,21 @@ class Shot:
     continuity_status: str = "not_checked"
     generation_complete: bool = False
     continuity_approved: bool = False  # never set True merely because generation finished
+    # Stage 7 — vision §7 storyboard / shot planning (additive; migrate setdefaults)
+    description: str = ""
+    camera_angle: str = ""
+    lens_composition: str = ""
+    prev_shot_id: Optional[str] = None
+    next_shot_id: Optional[str] = None
+    start_keyframe_path: Optional[str] = None
+    end_keyframe_path: Optional[str] = None
+    duration_s: Optional[float] = None
+    dialogue_or_sound: str = ""
+    image_prompt: str = ""  # empty → prompt_builder.build_prompt at export time
+    video_prompt: str = ""
+    planning_approved: bool = False  # storyboard plan approval; ≠ continuity_approved
+    planning_approved_at: Optional[str] = None
+    planning_approved_by: str = ""
 
 
 @dataclass
@@ -314,6 +330,8 @@ class Project:
             ref["styled_frame_path"] = paths.to_stored(root, ref.get("styled_frame_path"))
         for shot in data.get("shots", []):
             shot["raw_frame_path"] = paths.to_stored(root, shot.get("raw_frame_path"))
+            shot["start_keyframe_path"] = paths.to_stored(root, shot.get("start_keyframe_path"))
+            shot["end_keyframe_path"] = paths.to_stored(root, shot.get("end_keyframe_path"))
         for group in ("characters", "locations", "props"):
             for ent in data.get(group, []):
                 for asset in ent.get("assets", []):
@@ -332,6 +350,8 @@ class Project:
             ref.styled_frame_path = paths.to_absolute(root, ref.styled_frame_path)
         for shot in self.shots:
             shot.raw_frame_path = paths.to_absolute(root, shot.raw_frame_path) or shot.raw_frame_path
+            shot.start_keyframe_path = paths.to_absolute(root, shot.start_keyframe_path)
+            shot.end_keyframe_path = paths.to_absolute(root, shot.end_keyframe_path)
         for ent in [*self.characters, *self.locations, *self.props]:
             for asset in ent.assets:
                 asset.raw_path = paths.to_absolute(root, asset.raw_path) or asset.raw_path
@@ -389,6 +409,10 @@ class Project:
         refs = [ReferenceImage(**r) for r in data.get("reference_images", [])]
         shots: list[Shot] = []
         for sh in data.get("shots", []):
+            duration_raw = sh.get("duration_s")
+            duration_s: Optional[float] = None
+            if duration_raw is not None and duration_raw != "":
+                duration_s = float(duration_raw)
             shots.append(
                 Shot(
                     id=sh["id"],
@@ -411,6 +435,20 @@ class Project:
                     continuity_status=sh.get("continuity_status", "not_checked") or "not_checked",
                     generation_complete=bool(sh.get("generation_complete", False)),
                     continuity_approved=bool(sh.get("continuity_approved", False)),
+                    description=sh.get("description", "") or "",
+                    camera_angle=sh.get("camera_angle", "") or "",
+                    lens_composition=sh.get("lens_composition", "") or "",
+                    prev_shot_id=sh.get("prev_shot_id"),
+                    next_shot_id=sh.get("next_shot_id"),
+                    start_keyframe_path=sh.get("start_keyframe_path"),
+                    end_keyframe_path=sh.get("end_keyframe_path"),
+                    duration_s=duration_s,
+                    dialogue_or_sound=sh.get("dialogue_or_sound", "") or "",
+                    image_prompt=sh.get("image_prompt", "") or "",
+                    video_prompt=sh.get("video_prompt", "") or "",
+                    planning_approved=bool(sh.get("planning_approved", False)),
+                    planning_approved_at=sh.get("planning_approved_at"),
+                    planning_approved_by=sh.get("planning_approved_by", "") or "",
                 )
             )
         characters = [
@@ -613,6 +651,12 @@ class Project:
         for r in self.reference_images:
             if r.ref_id == ref_id:
                 return r
+        return None
+
+    def get_shot(self, shot_id: str) -> Optional[Shot]:
+        for s in self.shots:
+            if s.id == shot_id:
+                return s
         return None
 
 

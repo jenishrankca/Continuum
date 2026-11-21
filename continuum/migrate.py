@@ -57,6 +57,12 @@ def _rewrite_all_paths(root: Path, raw: dict, rewritten: list[str]) -> None:
         shot["raw_frame_path"] = _rewrite_path(
             root, shot.get("raw_frame_path"), rewritten, f"shot[{sid}].raw_frame_path"
         )
+        shot["start_keyframe_path"] = _rewrite_path(
+            root, shot.get("start_keyframe_path"), rewritten, f"shot[{sid}].start_keyframe_path"
+        )
+        shot["end_keyframe_path"] = _rewrite_path(
+            root, shot.get("end_keyframe_path"), rewritten, f"shot[{sid}].end_keyframe_path"
+        )
         shot.setdefault("character_ids", [])
         shot.setdefault("prop_ids", [])
         if "location_id" not in shot:
@@ -66,6 +72,27 @@ def _rewrite_all_paths(root: Path, raw: dict, rewritten: list[str]) -> None:
         shot.setdefault("continuity_status", "not_checked")
         shot.setdefault("generation_complete", False)
         shot.setdefault("continuity_approved", False)
+        # Stage 7 storyboard / shot planning defaults
+        shot.setdefault("description", "")
+        shot.setdefault("camera_angle", "")
+        shot.setdefault("lens_composition", "")
+        if "prev_shot_id" not in shot:
+            shot["prev_shot_id"] = None
+        if "next_shot_id" not in shot:
+            shot["next_shot_id"] = None
+        if "start_keyframe_path" not in shot:
+            shot["start_keyframe_path"] = None
+        if "end_keyframe_path" not in shot:
+            shot["end_keyframe_path"] = None
+        if "duration_s" not in shot:
+            shot["duration_s"] = None
+        shot.setdefault("dialogue_or_sound", "")
+        shot.setdefault("image_prompt", "")
+        shot.setdefault("video_prompt", "")
+        shot.setdefault("planning_approved", False)
+        if "planning_approved_at" not in shot:
+            shot["planning_approved_at"] = None
+        shot.setdefault("planning_approved_by", "")
     for group in ("characters", "locations", "props"):
         for ent in raw.get(group, []) or []:
             eid = ent.get("id")
@@ -117,6 +144,23 @@ def migrate_project(root: Path, slug: str, *, dry_run: bool = False) -> MigrateR
         messages.append("Stage 5: continuity inspection checks/reports initialized")
     if from_version < 6:
         messages.append("Stage 6: film intelligence suggestions initialized (editable; not auto-fact)")
+    if from_version < 7:
+        messages.append(
+            "Stage 7: storyboard/shot planning fields initialized "
+            "(camera_angle, keyframes, prompts, prev/next, planning_approved)"
+        )
+        # Wire prev/next from order only when both unset (non-destructive)
+        ordered = sorted(raw.get("shots", []) or [], key=lambda s: int(s.get("order", 0)))
+        linked = 0
+        for i, shot in enumerate(ordered):
+            if shot.get("prev_shot_id") is None and shot.get("next_shot_id") is None:
+                if i > 0:
+                    shot["prev_shot_id"] = ordered[i - 1].get("id")
+                if i + 1 < len(ordered):
+                    shot["next_shot_id"] = ordered[i + 1].get("id")
+                linked += 1
+        if linked:
+            messages.append(f"Stage 7: linked prev/next for {linked} shot(s) from order")
 
     bible_created: dict[str, int] | None = None
     if dry_run:

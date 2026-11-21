@@ -83,20 +83,36 @@
     {% else %}
       <table>
         <thead>
-          <tr><th>#</th><th>Id</th><th>Label</th><th>Status</th><th>Camera</th><th>Links</th></tr>
+          <tr>
+            <th>#</th><th>Id</th><th>Label</th><th>Status</th><th>Camera</th>
+            <th>Prev/Next</th><th>Plan</th><th>Links</th>
+          </tr>
         </thead>
         <tbody>
           {% for s in project.shots %}
             <tr>
               <td>{{ s.order }}</td>
               <td><code>{{ s.id }}</code></td>
-              <td>{{ s.label }}</td>
+              <td>
+                {{ s.label }}
+                {% if s.description %}<div class="meta">{{ s.description }}</div>{% endif %}
+              </td>
               <td><span class="pill {% if s.status == 'prompted' %}ok{% endif %}">{{ s.status }}</span></td>
-              <td class="meta">{{ s.shot_type }} · {{ s.camera_move }}</td>
+              <td class="meta">
+                {{ s.shot_type }} · {{ s.camera_angle or '—' }} · {{ s.camera_move }}
+                {% if s.lens_composition %}<div>{{ s.lens_composition }}</div>{% endif %}
+                {% if s.duration_s is not none %}<div>{{ s.duration_s }}s</div>{% endif %}
+              </td>
+              <td class="meta"><code>{{ s.prev_shot_id or '—' }}</code> → <code>{{ s.next_shot_id or '—' }}</code></td>
+              <td>
+                {% if s.planning_approved %}<span class="pill ok">approved</span>{% else %}<span class="pill">open</span>{% endif %}
+                <div class="meta">{{ s.continuity_status }}</div>
+              </td>
               <td class="meta">
                 {% if s.character_ids %}chars: {{ s.character_ids | join(", ") }}{% endif %}
                 {% if s.location_id %} · loc: {{ s.location_id }}{% endif %}
                 {% if s.prop_ids %} · props: {{ s.prop_ids | join(", ") }}{% endif %}
+                {% if s.continuity_state_id %} · state: {{ s.continuity_state_id }}{% endif %}
                 {% if s.anchor_ref_id %} · anchor: {{ s.anchor_ref_id }}{% endif %}
               </td>
             </tr>

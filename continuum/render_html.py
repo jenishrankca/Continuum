@@ -67,10 +67,13 @@ def render_storyboard(project: Project, out_path: Path) -> None:
     for shot in sorted(project.shots, key=lambda s: s.order):
         ref = project.get_ref(shot.anchor_ref_id) if shot.anchor_ref_id else None
         image_path = (ref.styled_frame_path or ref.raw_frame_path) if ref else shot.raw_frame_path
-        prompt = prompt_builder.build_prompt(shot, project.style)
+        prompt = prompt_builder.effective_image_prompt(shot, project.style)
         body = [
             f"Shot type: {shot.shot_type or '(unset)'}",
-            f"Camera: {shot.camera_move or '(unset)'}",
+            f"Angle: {shot.camera_angle or '(unset)'} · Move: {shot.camera_move or '(unset)'}",
+            f"Lens: {shot.lens_composition or '(unset)'}",
+            f"Prev/next: {shot.prev_shot_id or '—'} → {shot.next_shot_id or '—'}",
+            f"Plan: {'approved' if shot.planning_approved else 'open'} · Cont: {shot.continuity_status}",
             f"Anchor: {shot.anchor_ref_id or '(none)'}",
             f"Suggested tool: {tool_suggest.suggest_tool(shot)}",
         ]
