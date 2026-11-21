@@ -1,0 +1,47 @@
+# Continuum model / adapter registry stub (Stage 8 companion / board 20261121-15).
+# Empty models list by design — do NOT download checkpoints from this file.
+# Adapters record how Continuum talks to local/optional backends; licence of any
+# user-supplied weight is recorded per generation job, not assumed here.
+schema_version: 1
+adapters:
+  - id: manual
+    kind: image
+    provider: manual
+    licence: n/a
+    local_path: null
+    notes: Offline copy-path restyle / gen placeholder; no network.
+  - id: gemini
+    kind: image
+    provider: gemini
+    licence: proprietary-api
+    local_path: null
+    notes: Optional paid API; never Continuum Core default.
+  - id: local_a1111
+    kind: image
+    provider: local
+    endpoint_env: LOCAL_SD_URL
+    default_url: http://127.0.0.1:7860
+    licence: depends-on-checkpoint
+    local_path: null
+    notes: Automatic1111 WebUI --api. Only used when endpoint already reachable.
+  - id: comfy
+    kind: image
+    provider: comfy
+    endpoint_env: COMFY_URL
+    default_url: http://127.0.0.1:8188
+    licence: adapter-gpl-3.0; checkpoint-separate
+    local_path: null
+    notes: ComfyUI HTTP API. Probe-only until a local server + licensed workflow exist.
+  - id: mock
+    kind: image
+    provider: mock
+    licence: n/a
+    local_path: null
+    notes: Test/dev placeholder PNG writer; no models.
+  - id: dry_run
+    kind: image
+    provider: dry-run
+    licence: n/a
+    local_path: null
+    notes: Records job metadata without writing pixels.
+models: []

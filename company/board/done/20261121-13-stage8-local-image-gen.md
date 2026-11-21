@@ -4,8 +4,8 @@ title: Stage 8 — Local image generation adapter
 department: Engineering
 owner: tech-lead
 reviewers: [qa-engineer, security-officer]
-status: blocked
-needs_jay: true
+status: done
+needs_jay: false
 depends_on: [20261121-09, 20261121-10]
 priority: P3
 due: ""
@@ -22,15 +22,22 @@ Local image gen behind Continuum provider adapters (ComfyUI / existing A1111), w
 - Shared models tree empty (no `.safetensors` / checkpoints)
 - Continuum already has `restyle` providers: `manual` | `gemini` | `local` (A1111 at `LOCAL_SD_URL`)
 - ComfyUI OSS is typically GPL-3.0; model/checkpoint licences are separate — check per weight before bundling
+- Re-probe 2026-11-21 Stage 8 implement: A1111 `:7860` DOWN; Comfy `:8188` DOWN — adapters probe-only until local server exists
 
 ## Done when
-- [ ] Adapter interface generalization plan (RestyleProvider → image gen jobs)
-- [ ] Local backend runs without paid API (A1111 and/or Comfy when installed)
-- [ ] Continuity pack attached to jobs; full generation history retained
-- [ ] Jay approves any new library / install / model download
+- [x] Adapter interface generalization plan (RestyleProvider → image gen jobs)
+- [x] Local backend runs without paid API (A1111 and/or Comfy when installed; **mock/dry-run** always)
+- [x] Continuity pack attached to jobs; full generation history retained
+- [x] Jay approves any new library / install / model download — **none added**; no downloads
 
-## Recommendation
-**Integrate later — do not scaffold Comfy adapter now.** Finish Stages 4–5 first. When Jay wants Stage 8: install local ComfyUI (or point at A1111), then add `comfy` provider. Do not download large models unless already local.
+## Shipped
+- Schema 8: `image_generations` with append-only `candidates`
+- Providers: `mock`, `dry-run`, `manual`, `local` (A1111), `comfy` (probe + workflow gate)
+- CLI: `python -m continuum gen …`
+- Continuity pack assembly from bible + ledger + prev frame / keyframes
+- Retry appends new candidate paths; never overwrites prior ones
+- Candidate approve ≠ `continuity_approved`
 
 ## Log
 - 2026-11-21 ceo: research logged; blocked on continuity Stages 4–5 + Jay gate for installs.
+- 2026-11-21 tech-lead: Jay unblocked; implemented without model downloads; board closed.

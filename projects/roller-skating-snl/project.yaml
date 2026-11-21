@@ -1,4 +1,4 @@
-schema_version: 7
+schema_version: 8
 slug: roller-skating-snl
 style:
   project_name: Roller Skating SNL Sketch
@@ -2434,3 +2434,140 @@ film_intelligence_runs:
   - sug-a21890d57d
   - sug-54b204d75d
   actor: cli
+image_generations:
+- job_id: igen-365e623f94
+  shot_id: shot_001
+  provider: mock
+  status: completed
+  prompt: 'wide of A cluttered open-plan tech office floor lined with product displays
+    and rolling desk chairs, completely empty, long static hold on the empty floor
+    before anyone enters, letting the space register as ordinary, eye level, static,
+    24mm wide, deep focus, flat even studio lighting, three-point setup, clean digital
+    broadcast video, slight sharpening, no film grain, modern SNL live-sketch, digital
+    video, single-camera studio sitcom look. Continuity wardrobe: coworker_ref: office
+    casual'
+  negative_prompt: blurry, watermark, text overlay, deformed hands
+  seed: 0
+  model_id: mock-placeholder
+  model_version: '1'
+  model_licence: n/a
+  workflow:
+    kind: continuity_pack_v1
+    dry_run: false
+  settings: {}
+  reference_assets:
+  - role: character
+    entity_id: coworker_ref
+    asset_id: coworker_ref-asset
+    path: projects/roller-skating-snl/styled/coworker_ref.jpg
+    approved: false
+    notes: ''
+  - role: location
+    entity_id: set_office_floor
+    asset_id: set_office_floor-asset
+    path: projects/roller-skating-snl/styled/set_office_floor.jpg
+    approved: false
+    notes: ''
+  - role: prop
+    entity_id: danger_sign_ref
+    asset_id: danger_sign_ref-asset
+    path: projects/roller-skating-snl/styled/danger_sign_ref.jpg
+    approved: false
+    notes: ''
+  - role: raw_frame
+    entity_id: null
+    asset_id: null
+    path: projects/roller-skating-snl/frames/raw/scene0000_cand8.jpg
+    approved: false
+    notes: source frame for shot
+  - role: style
+    entity_id: set_office_floor
+    asset_id: null
+    path: projects/roller-skating-snl/styled/set_office_floor.jpg
+    approved: false
+    notes: 'anchor set: Establishing wide of the empty open-plan office floor before
+      the chaos starts'
+  candidates:
+  - asset_id: gasset-e7da241f5a
+    path: projects/roller-skating-snl/generations/igen-365e623f94/gasset-e7da241f5a.png
+    created_at: '2026-11-21T07:07:34Z'
+    approval: pending
+    approved_by: ''
+    approved_at: null
+    rejection_reason: ''
+    provider: mock
+    message: Mock candidate written to C:\Users\jenis\App\Continuum\projects\roller-skating-snl\generations\igen-365e623f94\gasset-e7da241f5a.png
+  continuity_report_id: null
+  continuity_pack_summary: shot=shot_001 refs=5/5 with_path approved=0 wardrobe_notes=1
+    state=state-4c27ff1e05
+  queue_attempts: 1
+  max_attempts: 3
+  last_error: ''
+  created_at: '2026-11-21T07:07:34Z'
+  updated_at: '2026-11-21T07:07:34Z'
+  actor: jay
+- job_id: igen-c12ea03e74
+  shot_id: shot_002
+  provider: dry-run
+  status: dry_run
+  prompt: 'medium of Sarah from HR rollerblades backward across the office floor,
+    laughing over her shoulder at someone off-camera, handheld, flat even studio lighting,
+    three-point setup, clean digital broadcast video, slight sharpening, no film grain,
+    modern SNL live-sketch, digital video, single-camera studio sitcom look. Continuity
+    wardrobe: coworker_ref: office casual'
+  negative_prompt: blurry, watermark, text overlay, deformed hands
+  seed: null
+  model_id: dry-run
+  model_version: ''
+  model_licence: n/a
+  workflow:
+    kind: continuity_pack_v1
+    dry_run: true
+  settings: {}
+  reference_assets:
+  - role: character
+    entity_id: coworker_ref
+    asset_id: coworker_ref-asset
+    path: projects/roller-skating-snl/styled/coworker_ref.jpg
+    approved: false
+    notes: ''
+  - role: location
+    entity_id: set_office_floor
+    asset_id: set_office_floor-asset
+    path: projects/roller-skating-snl/styled/set_office_floor.jpg
+    approved: false
+    notes: ''
+  - role: prop
+    entity_id: danger_sign_ref
+    asset_id: danger_sign_ref-asset
+    path: projects/roller-skating-snl/styled/danger_sign_ref.jpg
+    approved: false
+    notes: ''
+  - role: prev_frame
+    entity_id: shot_001
+    asset_id: null
+    path: projects/roller-skating-snl/frames/raw/scene0000_cand8.jpg
+    approved: false
+    notes: previous shot end/raw frame
+  - role: raw_frame
+    entity_id: null
+    asset_id: null
+    path: projects/roller-skating-snl/frames/raw/scene0001_cand11.jpg
+    approved: false
+    notes: source frame for shot
+  - role: style
+    entity_id: coworker_ref
+    asset_id: null
+    path: projects/roller-skating-snl/styled/coworker_ref.jpg
+    approved: false
+    notes: 'anchor character: Sarah from HR skating backward, laughing, playful energy'
+  candidates: []
+  continuity_report_id: null
+  continuity_pack_summary: shot=shot_002 refs=6/6 with_path approved=0 wardrobe_notes=1
+    state=state-502f7e5869
+  queue_attempts: 1
+  max_attempts: 3
+  last_error: ''
+  created_at: '2026-11-21T07:07:35Z'
+  updated_at: '2026-11-21T07:07:35Z'
+  actor: jay

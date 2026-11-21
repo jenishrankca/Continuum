@@ -26,7 +26,7 @@ dev = ["pytest>=8"]
 include = ["continuum*"]
 
 [tool.setuptools.package-data]
-continuum = ["templates/*.html", "studio_dashboard_static/*.html"]
+continuum = ["templates/*.html", "studio_dashboard_static/*.html", "model_registry.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

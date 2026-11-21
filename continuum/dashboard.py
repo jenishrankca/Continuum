@@ -51,6 +51,9 @@ def _project_summary(root: Path, slug: str) -> dict[str, Any]:
         "has_storyboard": (out_dir / "storyboard.html").is_file(),
         "has_shotlist": (out_dir / "shotlist.md").is_file(),
         "has_review_overview": (out_dir / "review_overview.html").is_file(),
+        "gen_jobs": len(project.image_generations),
+        "gen_candidates": sum(len(j.candidates) for j in project.image_generations),
+        "gen_queued": sum(1 for j in project.image_generations if j.status == "queued"),
     }
 
 
@@ -122,6 +125,18 @@ def _project_detail(root: Path, slug: str) -> dict[str, Any]:
         }
         for sc in project.scenes
     ]
+    generations = [
+        {
+            "job_id": j.job_id,
+            "shot_id": j.shot_id,
+            "provider": j.provider,
+            "status": j.status,
+            "candidates": len(j.candidates),
+            "attempts": j.queue_attempts,
+            "model_id": j.model_id,
+        }
+        for j in project.image_generations
+    ]
     return {
         **summary,
         "style_phrase": project.style.style_phrase,
@@ -132,6 +147,7 @@ def _project_detail(root: Path, slug: str) -> dict[str, Any]:
         "props_detail": props,
         "shots": shots,
         "scenes": scenes,
+        "generations": generations,
     }
 
 

@@ -13,6 +13,8 @@ from . import detect, review, shots as shots_module, lint, render_markdown, rend
 from . import migrate as migrate_module
 from . import paths
 from . import shot_plan
+from . import generation
+from . import model_registry as model_registry_module
 from .restyle import get_provider
 from .envfile import load_dotenv
 
@@ -178,6 +180,126 @@ def cmd_status(args: argparse.Namespace) -> None:
         f"plan-approved; "
         f"linked={sum(1 for s in project.shots if s.prev_shot_id or s.next_shot_id)}"
     )
+    print(
+        f"Image gen:   {len(project.image_generations)} jobs; "
+        f"candidates={sum(len(j.candidates) for j in project.image_generations)}; "
+        f"queued={sum(1 for j in project.image_generations if j.status == 'queued')}"
+    )
+
+
+def cmd_gen(args: argparse.Namespace) -> None:
+    root = Path.cwd()
+    action = args.gen_action
+
+    if action == "providers":
+        for row in generation.list_providers():
+            flag = "UP" if row["available"] else "DOWN"
+            print(f"  [{flag}] {row['name']}: {row['message']}")
+        return
+
+    if action == "registry":
+        reg = model_registry_module.load_registry()
+        print(model_registry_module.summarize_registry(reg))
+        return
+
+    project = Project.load(root, args.slug)
+
+    if action == "pack":
+        try:
+            pack = generation.assemble_continuity_pack(project, args.shot)
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        print(generation.format_pack(pack))
+        return
+
+    if action == "enqueue":
+        try:
+            job = generation.enqueue_shot(
+                root,
+                project,
+                args.shot,
+                provider=args.provider,
+                dry_run=args.dry_run,
+                seed=args.seed,
+                actor=args.by,
+            )
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        project.save(root)
+        print(f"Enqueued {job.job_id} for {job.shot_id} provider={job.provider} status={job.status}")
+        if args.run:
+            generation.process_job(root, project, job.job_id)
+            project.save(root)
+            print(generation.show_job(project, job.job_id))
+        return
+
+    if action == "run":
+        if args.id:
+            try:
+                generation.process_job(root, project, args.id, force=args.force)
+            except KeyError as exc:
+                raise SystemExit(str(exc)) from exc
+            project.save(root)
+            print(generation.show_job(project, args.id))
+            return
+        done = generation.process_queue(root, project, limit=args.limit)
+        project.save(root)
+        print(f"Processed {len(done)} queued job(s)")
+        for job in done:
+            print(f"  {job.job_id} → {job.status} candidates={len(job.candidates)}")
+        return
+
+    if action == "list":
+        print(generation.list_jobs(project))
+        return
+
+    if action == "show":
+        try:
+            print(generation.show_job(project, args.id))
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        return
+
+    if action == "retry":
+        try:
+            job = generation.retry_job(root, project, args.id)
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        project.save(root)
+        print(f"Retry {job.job_id} → {job.status} candidates={len(job.candidates)}")
+        print(generation.show_job(project, job.job_id))
+        return
+
+    if action == "approve":
+        try:
+            cand = generation.approve_candidate(
+                project, args.id, args.asset, approved_by=args.by
+            )
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        project.save(root)
+        print(
+            f"Approved candidate {cand.asset_id} on {args.id} by {cand.approved_by} "
+            "(does not set shot.continuity_approved)"
+        )
+        return
+
+    if action == "reject":
+        try:
+            cand = generation.reject_candidate(
+                project,
+                args.id,
+                args.asset,
+                reason=args.reason,
+                rejected_by=args.by,
+            )
+        except KeyError as exc:
+            raise SystemExit(str(exc)) from exc
+        project.save(root)
+        print(f"Rejected candidate {cand.asset_id} on {args.id}: {cand.rejection_reason}")
+        return
+
+    raise SystemExit(f"Unknown gen action: {action}")
 
 
 def cmd_shot(args: argparse.Namespace) -> None:
@@ -1110,6 +1232,79 @@ def build_parser() -> argparse.ArgumentParser:
     p_ia_rj.add_argument("--by", default="jay")
     p_ia_rj.add_argument("--reason", default="rejected")
     p_ia_rj.set_defaults(func=cmd_intel)
+
+    p_gen = sub.add_parser(
+        "gen",
+        help="Stage 8 local image generation (queue/history; mock/dry-run default)",
+    )
+    gen_sub = p_gen.add_subparsers(dest="gen_action", required=True)
+
+    p_gen_prov = gen_sub.add_parser("providers", help="Probe image gen providers (no downloads)")
+    p_gen_prov.set_defaults(func=cmd_gen)
+
+    p_gen_reg = gen_sub.add_parser("registry", help="Show model/adapter registry stub")
+    p_gen_reg.set_defaults(func=cmd_gen)
+
+    p_gen_pack = gen_sub.add_parser("pack", help="Assemble continuity pack for a shot")
+    p_gen_pack.add_argument("slug")
+    p_gen_pack.add_argument("--shot", required=True)
+    p_gen_pack.set_defaults(func=cmd_gen)
+
+    p_gen_enq = gen_sub.add_parser("enqueue", help="Enqueue an image gen job for a shot")
+    p_gen_enq.add_argument("slug")
+    p_gen_enq.add_argument("--shot", required=True)
+    p_gen_enq.add_argument(
+        "--provider",
+        choices=["mock", "dry-run", "manual", "local", "comfy"],
+        default="mock",
+    )
+    p_gen_enq.add_argument("--dry-run", action="store_true", help="Force dry-run provider")
+    p_gen_enq.add_argument("--seed", type=int, default=None)
+    p_gen_enq.add_argument("--by", default="jay")
+    p_gen_enq.add_argument("--run", action="store_true", help="Process immediately after enqueue")
+    p_gen_enq.set_defaults(func=cmd_gen)
+
+    p_gen_run = gen_sub.add_parser("run", help="Process queued jobs (or one --id)")
+    p_gen_run.add_argument("slug")
+    p_gen_run.add_argument("--id", default=None)
+    p_gen_run.add_argument("--limit", type=int, default=10)
+    p_gen_run.add_argument("--force", action="store_true")
+    p_gen_run.set_defaults(func=cmd_gen)
+
+    p_gen_ls = gen_sub.add_parser("list", help="List image generation jobs")
+    p_gen_ls.add_argument("slug")
+    p_gen_ls.set_defaults(func=cmd_gen)
+
+    p_gen_sh = gen_sub.add_parser("show", help="Show one generation job + candidates")
+    p_gen_sh.add_argument("slug")
+    p_gen_sh.add_argument("--id", required=True)
+    p_gen_sh.set_defaults(func=cmd_gen)
+
+    p_gen_rt = gen_sub.add_parser(
+        "retry",
+        help="Retry a job; appends a new candidate (never overwrites prior ones)",
+    )
+    p_gen_rt.add_argument("slug")
+    p_gen_rt.add_argument("--id", required=True)
+    p_gen_rt.set_defaults(func=cmd_gen)
+
+    p_gen_ap = gen_sub.add_parser(
+        "approve",
+        help="Approve a candidate asset (does not set continuity_approved)",
+    )
+    p_gen_ap.add_argument("slug")
+    p_gen_ap.add_argument("--id", required=True, help="Job id")
+    p_gen_ap.add_argument("--asset", required=True, help="Candidate asset id")
+    p_gen_ap.add_argument("--by", default="jay")
+    p_gen_ap.set_defaults(func=cmd_gen)
+
+    p_gen_rj = gen_sub.add_parser("reject", help="Reject a candidate asset")
+    p_gen_rj.add_argument("slug")
+    p_gen_rj.add_argument("--id", required=True)
+    p_gen_rj.add_argument("--asset", required=True)
+    p_gen_rj.add_argument("--by", default="jay")
+    p_gen_rj.add_argument("--reason", default="rejected")
+    p_gen_rj.set_defaults(func=cmd_gen)
 
     return parser
 

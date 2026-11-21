@@ -21,6 +21,8 @@ python -m continuum bible list|promote|add-character|… <slug>
 python -m continuum ledger list|show|set-character|set-location|set-prop|copy|exception|… <slug>
 python -m continuum inspect run|list|show|override|mark-generated|approve-shot <slug>
 python -m continuum intel analyze|list|show|edit|accept|reject <slug>
+python -m continuum shot list|show|set|link-sequence|sync-prompts|approve <slug>
+python -m continuum gen providers|registry|pack|enqueue|run|list|show|retry|approve|reject …
 python -m continuum dashboard [--port 8765]
 python -m continuum studio-dashboard [--rebuild|--open|--serve]
 ```
@@ -30,7 +32,8 @@ Use `py -3.13` for the venv on this Windows machine (not bare `python3`).
 ## Secrets
 
 - Optional `GEMINI_API_KEY` in `.env` (gitignored) for `restyle --provider gemini`.
-- Optional `LOCAL_SD_URL` for a local Automatic1111 WebUI (`restyle --provider local`).
+- Optional `LOCAL_SD_URL` for a local Automatic1111 WebUI (`restyle --provider local` / `gen --provider local`).
+- Optional `COMFY_URL` for a local ComfyUI server (`gen --provider comfy`, probe-only until workflow registered).
 
 ## IWantThatApp Studio
 
@@ -72,8 +75,16 @@ Ponytail (`DietrichGebert/ponytail`, MIT) is already installed for Claude Code /
 - Uncertain / low-confidence suggestions require `--allow-uncertain` (or edit to raise confidence) before accept.
 - `intel analyze` uses scene-detect metadata + OpenCV environment heuristics only (no model downloads).
 
-### ComfyUI / local gen (Stages 8–9)
+### Local image generation (Stage 8)
 
-- Machine: Comfy Desktop Electron + Comfy Cloud remote only; **no local ComfyUI server**, **no model weights**.
-- Continuum already has restyle providers `manual` / `gemini` / `local` (A1111). Comfy adapter is Stage 8 — **after** Stages 4–5; Jay gate for installs/downloads.
-- ComfyUI itself is typically GPL-3.0; checkpoint licences are separate. Do not download large models unless Jay already has them locally.
+- Schema 8 adds `image_generations` (jobs + append-only `candidates`). Retry never overwrites prior candidates.
+- CLI: `python -m continuum gen …` — default providers for tests/dev: `mock` / `dry-run`.
+- Continuity pack (`gen pack`) assembles approved bible refs, ledger wardrobe, prev frame, style, keyframes before enqueue.
+- Candidate approval ≠ `shot.continuity_approved`.
+- Model registry stub: `continuum/model_registry.yaml` + `python -m continuum gen registry` (empty `models:`; no downloads).
+- A1111 (`local`) / Comfy (`comfy`) only run when already reachable; otherwise status `unavailable`. Do not download checkpoints.
+
+### ComfyUI / Stage 9 video
+
+- Machine survey: Comfy Desktop Electron + Comfy Cloud remote; **no local ComfyUI server**, **no model weights** on disk.
+- ComfyUI typically GPL-3.0; checkpoint licences are separate. Do not download large models unless already local and licence recorded.

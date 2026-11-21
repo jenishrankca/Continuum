@@ -15,7 +15,18 @@ from . import paths
 # schema_version 5: continuity inspection checks + reports
 # schema_version 6: film intelligence suggestions (editable; never auto-fact)
 # schema_version 7: storyboard / shot planning fields (vision §7)
-SCHEMA_VERSION = 7
+# schema_version 8: local image generation jobs + history (vision §8)
+SCHEMA_VERSION = 8
+
+GENERATION_JOB_STATUSES = (
+    "queued",
+    "running",
+    "completed",
+    "failed",
+    "cancelled",
+    "dry_run",
+)
+GENERATION_APPROVALS = ("pending", "approved", "rejected")
 
 CONTINUITY_STATUSES = (
     "not_checked",
@@ -290,6 +301,61 @@ class FilmIntelligenceRun:
 
 
 @dataclass
+class ContinuityPackRef:
+    """One reference asset assembled for a continuity-aware generation job."""
+
+    role: str  # character | location | prop | prev_frame | style | keyframe_start | keyframe_end | raw_frame
+    entity_id: Optional[str] = None
+    asset_id: Optional[str] = None
+    path: Optional[str] = None
+    approved: bool = False
+    notes: str = ""
+
+
+@dataclass
+class GeneratedAsset:
+    """Immutable generation candidate. Retries append new rows; never overwrite paths."""
+
+    asset_id: str
+    path: str
+    created_at: str
+    approval: str = "pending"  # GENERATION_APPROVALS
+    approved_by: str = ""
+    approved_at: Optional[str] = None
+    rejection_reason: str = ""
+    provider: str = ""
+    message: str = ""
+
+
+@dataclass
+class ImageGenerationJob:
+    """Vision §8 image generation history row (append-only candidates)."""
+
+    job_id: str
+    shot_id: str
+    provider: str
+    status: str = "queued"  # GENERATION_JOB_STATUSES
+    prompt: str = ""
+    negative_prompt: str = ""
+    seed: Optional[int] = None
+    model_id: str = ""
+    model_version: str = ""
+    model_licence: str = ""
+    workflow: dict[str, Any] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
+    reference_assets: list[ContinuityPackRef] = field(default_factory=list)
+    candidates: list[GeneratedAsset] = field(default_factory=list)
+    continuity_report_id: Optional[str] = None
+    continuity_pack_summary: str = ""
+    queue_attempts: int = 0
+    max_attempts: int = 3
+    last_error: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+    actor: str = ""
+
+
+@dataclass
 class Project:
     schema_version: int
     slug: str
@@ -308,6 +374,7 @@ class Project:
     continuity_reports: list[ContinuityReport] = field(default_factory=list)
     film_suggestions: list[FilmSuggestion] = field(default_factory=list)
     film_intelligence_runs: list[FilmIntelligenceRun] = field(default_factory=list)
+    image_generations: list[ImageGenerationJob] = field(default_factory=list)
 
     @staticmethod
     def project_dir(root: Path, slug: str) -> Path:
@@ -337,6 +404,11 @@ class Project:
                 for asset in ent.get("assets", []):
                     asset["raw_path"] = paths.to_stored(root, asset.get("raw_path"))
                     asset["styled_path"] = paths.to_stored(root, asset.get("styled_path"))
+        for job in data.get("image_generations", []):
+            for ref in job.get("reference_assets", []) or []:
+                ref["path"] = paths.to_stored(root, ref.get("path"))
+            for cand in job.get("candidates", []) or []:
+                cand["path"] = paths.to_stored(root, cand.get("path"))
         return data
 
     def _resolve_runtime_paths(self, root: Path) -> None:
@@ -356,6 +428,11 @@ class Project:
             for asset in ent.assets:
                 asset.raw_path = paths.to_absolute(root, asset.raw_path) or asset.raw_path
                 asset.styled_path = paths.to_absolute(root, asset.styled_path)
+        for job in self.image_generations:
+            for ref in job.reference_assets:
+                ref.path = paths.to_absolute(root, ref.path)
+            for cand in job.candidates:
+                cand.path = paths.to_absolute(root, cand.path) or cand.path
 
     def save(self, root: Path) -> None:
         path = self.yaml_path(root, self.slug)
@@ -579,6 +656,9 @@ class Project:
             )
             for r in data.get("film_intelligence_runs") or []
         ]
+        image_generations = [
+            Project._parse_image_generation(raw) for raw in data.get("image_generations") or []
+        ]
         return Project(
             schema_version=data.get("schema_version", 1),
             slug=data["slug"],
@@ -597,6 +677,7 @@ class Project:
             continuity_reports=continuity_reports,
             film_suggestions=film_suggestions,
             film_intelligence_runs=film_intelligence_runs,
+            image_generations=image_generations,
         )
 
     @staticmethod
@@ -658,6 +739,68 @@ class Project:
             if s.id == shot_id:
                 return s
         return None
+
+    def get_image_generation(self, job_id: str) -> Optional[ImageGenerationJob]:
+        for job in self.image_generations:
+            if job.job_id == job_id:
+                return job
+        return None
+
+    @staticmethod
+    def _parse_image_generation(raw: dict[str, Any]) -> ImageGenerationJob:
+        refs = [
+            ContinuityPackRef(
+                role=r.get("role", "") or "",
+                entity_id=r.get("entity_id"),
+                asset_id=r.get("asset_id"),
+                path=r.get("path"),
+                approved=bool(r.get("approved", False)),
+                notes=r.get("notes", "") or "",
+            )
+            for r in raw.get("reference_assets") or []
+        ]
+        candidates = [
+            GeneratedAsset(
+                asset_id=c["asset_id"],
+                path=c["path"],
+                created_at=c.get("created_at", "") or "",
+                approval=c.get("approval", "pending") or "pending",
+                approved_by=c.get("approved_by", "") or "",
+                approved_at=c.get("approved_at"),
+                rejection_reason=c.get("rejection_reason", "") or "",
+                provider=c.get("provider", "") or "",
+                message=c.get("message", "") or "",
+            )
+            for c in raw.get("candidates") or []
+        ]
+        seed_raw = raw.get("seed")
+        seed: Optional[int] = None
+        if seed_raw is not None and seed_raw != "":
+            seed = int(seed_raw)
+        return ImageGenerationJob(
+            job_id=raw["job_id"],
+            shot_id=raw["shot_id"],
+            provider=raw.get("provider", "") or "",
+            status=raw.get("status", "queued") or "queued",
+            prompt=raw.get("prompt", "") or "",
+            negative_prompt=raw.get("negative_prompt", "") or "",
+            seed=seed,
+            model_id=raw.get("model_id", "") or "",
+            model_version=raw.get("model_version", "") or "",
+            model_licence=raw.get("model_licence", "") or "",
+            workflow=dict(raw.get("workflow") or {}),
+            settings=dict(raw.get("settings") or {}),
+            reference_assets=refs,
+            candidates=candidates,
+            continuity_report_id=raw.get("continuity_report_id"),
+            continuity_pack_summary=raw.get("continuity_pack_summary", "") or "",
+            queue_attempts=int(raw.get("queue_attempts", 0) or 0),
+            max_attempts=int(raw.get("max_attempts", 3) or 3),
+            last_error=raw.get("last_error", "") or "",
+            created_at=raw.get("created_at", "") or "",
+            updated_at=raw.get("updated_at", "") or "",
+            actor=raw.get("actor", "") or "",
+        )
 
 
 def slugify(text: str) -> str:

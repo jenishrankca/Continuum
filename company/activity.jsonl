@@ -29,3 +29,5 @@
 {"ts":"2026-11-21T08:10:00Z","agent":"backend-engineer","event":"stop","item":"20261121-10","summary":"Stage 5 inspection schema 5 + OpenCV checks + override; sample run"}
 {"ts":"2026-11-21T08:30:00Z","agent":"tech-lead","event":"stop","item":"20261121-11","summary":"Stage 6 film intelligence schema 6 + intel CLI; suggestions editable, never auto-fact"}
 {"ts":"2026-11-21T07:05:00Z","agent":"shotlist-engineer","event":"done","item":"20261121-12","summary":"Stage 7 schema 7 shot planning fields + CLI/dashboard; sample migrated; board closed"}
+{"ts":"2026-11-21T07:10:00Z","agent":"tech-lead","event":"done","item":"20261121-13","summary":"Stage 8 image gen queue/history + mock/dry-run; A1111/Comfy probe-only; no downloads"}
+{"ts":"2026-11-21T07:10:05Z","agent":"backend-engineer","event":"done","item":"20261121-15","summary":"Model registry stub empty models[]; gen registry CLI"}

@@ -63,6 +63,17 @@ def _rewrite_all_paths(root: Path, raw: dict, rewritten: list[str]) -> None:
         shot["end_keyframe_path"] = _rewrite_path(
             root, shot.get("end_keyframe_path"), rewritten, f"shot[{sid}].end_keyframe_path"
         )
+    for job in raw.get("image_generations", []) or []:
+        jid = job.get("job_id")
+        for i, ref in enumerate(job.get("reference_assets", []) or []):
+            ref["path"] = _rewrite_path(
+                root, ref.get("path"), rewritten, f"gen[{jid}].ref[{i}].path"
+            )
+        for cand in job.get("candidates", []) or []:
+            aid = cand.get("asset_id")
+            cand["path"] = _rewrite_path(
+                root, cand.get("path"), rewritten, f"gen[{jid}].cand[{aid}].path"
+            )
         shot.setdefault("character_ids", [])
         shot.setdefault("prop_ids", [])
         if "location_id" not in shot:
@@ -132,6 +143,7 @@ def migrate_project(root: Path, slug: str, *, dry_run: bool = False) -> MigrateR
     raw.setdefault("continuity_reports", [])
     raw.setdefault("film_suggestions", [])
     raw.setdefault("film_intelligence_runs", [])
+    raw.setdefault("image_generations", [])
 
     # Temporarily write so Project.load can promote (or work in-memory)
     raw["schema_version"] = SCHEMA_VERSION
@@ -161,6 +173,17 @@ def migrate_project(root: Path, slug: str, *, dry_run: bool = False) -> MigrateR
                 linked += 1
         if linked:
             messages.append(f"Stage 7: linked prev/next for {linked} shot(s) from order")
+    if from_version < 8:
+        messages.append(
+            "Stage 8: image_generations history initialized "
+            "(append-only candidates; mock/dry-run default; no model downloads)"
+        )
+        for job in raw.get("image_generations", []) or []:
+            job.setdefault("candidates", [])
+            job.setdefault("reference_assets", [])
+            job.setdefault("queue_attempts", 0)
+            job.setdefault("max_attempts", 3)
+            job.setdefault("status", "queued")
 
     bible_created: dict[str, int] | None = None
     if dry_run:

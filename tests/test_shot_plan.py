@@ -139,11 +139,11 @@ def test_migrate_v6_to_v7_sets_defaults_and_links(tmp_path: Path) -> None:
     _write_project(tmp_path, schema=6)
     report = migrate_project(tmp_path, "demo", dry_run=False)
     assert report.to_version == SCHEMA_VERSION
-    assert SCHEMA_VERSION == 7
+    assert SCHEMA_VERSION >= 7
     assert any("Stage 7" in m for m in report.messages)
 
     project = Project.load(tmp_path, "demo")
-    assert project.schema_version == 7
+    assert project.schema_version == SCHEMA_VERSION
     s1 = project.get_shot("shot-001")
     s2 = project.get_shot("shot-002")
     assert s1 is not None and s2 is not None
