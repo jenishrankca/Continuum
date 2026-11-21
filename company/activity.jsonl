@@ -15,3 +15,12 @@
 {"ts":"2026-11-21T06:40:00Z","agent":"tech-lead","event":"stop","item":"20261121-06","summary":"Stage 3 bible entities + migrate promote; sample on schema 3"}
 {"ts":"2026-11-21T06:45:00Z","agent":"web-engineer","event":"stop","item":"20261121-07","summary":"Local dashboard on :8765; tests pass"}
 {"ts":"2026-11-21T07:00:00Z","agent":"web-engineer","event":"stop","item":"20261121-08","summary":"Local Studio HTML dashboard under company/dashboard; studio.json dashboard_url set"}
+{"ts":"2026-11-21T07:15:00Z","agent":"ceo","event":"start","item":null,"summary":"CEO allocate Stages 4-9; Ponytail+Comfy survey"}
+{"ts":"2026-11-21T07:16:00Z","agent":"ceo","event":"stop","item":"20261121-09","summary":"Opened Stage 4 ledger; tech-lead; status doing P0"}
+{"ts":"2026-11-21T07:16:30Z","agent":"ceo","event":"stop","item":"20261121-15","summary":"Opened model registry stub; backend-engineer; parallel P1"}
+{"ts":"2026-11-21T07:17:00Z","agent":"ceo","event":"stop","item":"20261121-10","summary":"Queued Stage 5 inspection; blocked on Stage 4"}
+{"ts":"2026-11-21T07:17:30Z","agent":"ceo","event":"stop","item":"20261121-11","summary":"Queued Stage 6 film intelligence as idea"}
+{"ts":"2026-11-21T07:18:00Z","agent":"ceo","event":"stop","item":"20261121-12","summary":"Queued Stage 7 storyboard expansion; shotlist-engineer"}
+{"ts":"2026-11-21T07:18:30Z","agent":"ceo","event":"stop","item":"20261121-13","summary":"Stage 8 Comfy/A1111 blocked; no local models; Jay gate"}
+{"ts":"2026-11-21T07:19:00Z","agent":"ceo","event":"stop","item":"20261121-14","summary":"Stage 9 video gen parked after Stage 8"}
+{"ts":"2026-11-21T07:20:00Z","agent":"ceo","event":"stop","item":null,"summary":"Allocation complete; rebuild Studio HTML dashboard"}

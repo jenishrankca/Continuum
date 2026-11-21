@@ -43,3 +43,13 @@ Run the studio from this folder in Claude Code with `/iwantthatapp-studio:ceo`.
 - Open: double-click the HTML, or `python -m continuum studio-dashboard --open`, or `--serve` on http://127.0.0.1:8766/.
 - Product Continuum UI stays separate: `python -m continuum dashboard` → http://127.0.0.1:8765/ (linked from the Studio HTML).
 - Do **not** push Studio CEO updates to ArtifactData / claude.ai URLs — update local files only.
+
+### Ponytail (agent skill — not Continuum dashboard)
+
+Ponytail (`DietrichGebert/ponytail`, MIT) is already installed for Claude Code / Cursor as a “lazy senior” coding skill. Its local `~\.config\ponytail\band\board.html` is a **session cost metrics** board, not a Studio CEO board. Continuum’s `company/dashboard/` already covers the useful pattern (self-contained HTML + regenerated data). **Do not install Ponytail into the Continuum product tree.**
+
+### ComfyUI / local gen (Stages 8–9)
+
+- Machine: Comfy Desktop Electron + Comfy Cloud remote only; **no local ComfyUI server**, **no model weights**.
+- Continuum already has restyle providers `manual` / `gemini` / `local` (A1111). Comfy adapter is Stage 8 — **after** Stages 4–5; Jay gate for installs/downloads.
+- ComfyUI itself is typically GPL-3.0; checkpoint licences are separate. Do not download large models unless Jay already has them locally.
