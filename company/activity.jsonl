@@ -12,3 +12,5 @@
 {"ts":"2026-11-21T06:21:30Z","agent":"ceo","event":"stop","item":"20261121-05","summary":"Jay chose gitignore large media; LFS later if asked"}
 {"ts":"2026-11-21T06:22:00Z","agent":"ceo","event":"start","item":"20261121-03","summary":"Stage 2 in-progress after rebrand push"}
 {"ts":"2026-11-21T06:30:00Z","agent":"tech-lead","event":"stop","item":"20261121-03","summary":"Stage 2 relative paths + migrate + tests; sample migrated to schema 2"}
+{"ts":"2026-11-21T06:40:00Z","agent":"tech-lead","event":"stop","item":"20261121-06","summary":"Stage 3 bible entities + migrate promote; sample on schema 3"}
+{"ts":"2026-11-21T06:45:00Z","agent":"web-engineer","event":"stop","item":"20261121-07","summary":"Local dashboard on :8765; tests pass"}

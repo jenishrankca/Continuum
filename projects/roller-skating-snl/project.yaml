@@ -1,4 +1,4 @@
-schema_version: 2
+schema_version: 3
 slug: roller-skating-snl
 style:
   project_name: Roller Skating SNL Sketch
@@ -731,6 +731,9 @@ shots:
     the space register as ordinary
   notes: ''
   status: prompted
+  character_ids: []
+  location_id: set_office_floor
+  prop_ids: []
 - id: shot_002
   order: 2
   label: Coworker glides in, all confidence
@@ -745,6 +748,10 @@ shots:
   beat_before_gag: ''
   notes: ''
   status: prompted
+  character_ids:
+  - coworker_ref
+  location_id: null
+  prop_ids: []
 - id: shot_003
   order: 3
   label: The intern joins in, oblivious and on a call
@@ -759,6 +766,10 @@ shots:
   beat_before_gag: ''
   notes: ''
   status: prompted
+  character_ids:
+  - intern_ref
+  location_id: null
+  prop_ids: []
 - id: shot_004
   order: 4
   label: Sarah clocks the danger
@@ -774,6 +785,10 @@ shots:
     registers on her face
   notes: ''
   status: prompted
+  character_ids:
+  - coworker_alarmed_ref
+  location_id: null
+  prop_ids: []
 - id: shot_005
   order: 5
   label: Sarah reacts in horror
@@ -788,6 +803,10 @@ shots:
   beat_before_gag: ''
   notes: ''
   status: prompted
+  character_ids:
+  - coworker_alarmed_ref
+  location_id: null
+  prop_ids: []
 - id: shot_006
   order: 6
   label: Kevin skates the edge, totally unaware
@@ -804,6 +823,10 @@ shots:
     milking the obliviousness
   notes: ''
   status: prompted
+  character_ids: []
+  location_id: null
+  prop_ids:
+  - danger_sign_ref
 - id: shot_007
   order: 7
   label: The near-miss recovery
@@ -819,3 +842,97 @@ shots:
   beat_before_gag: ''
   notes: ''
   status: prompted
+  character_ids:
+  - intern_edge_ref
+  location_id: null
+  prop_ids: []
+characters:
+- id: coworker_ref
+  name: Sarah from HR skating backward
+  description: Sarah from HR skating backward, laughing, playful energy
+  appearance_notes: ''
+  wardrobe_notes: ''
+  assets:
+  - asset_id: coworker_ref-asset
+    raw_path: projects/roller-skating-snl/frames/raw/scene0001_cand11.jpg
+    styled_path: projects/roller-skating-snl/styled/coworker_ref.jpg
+    source_ref_id: coworker_ref
+    approved: false
+    approved_at: null
+    notes: Sarah from HR skating backward, laughing, playful energy
+  approved: false
+- id: intern_ref
+  name: Kevin the intern rollerblading with AirPods in
+  description: Kevin the intern rollerblading with AirPods in, mid-spin, not looking
+  appearance_notes: ''
+  wardrobe_notes: ''
+  assets:
+  - asset_id: intern_ref-asset
+    raw_path: projects/roller-skating-snl/frames/raw/scene0002_cand2.jpg
+    styled_path: projects/roller-skating-snl/styled/intern_ref.jpg
+    source_ref_id: intern_ref
+    approved: false
+    approved_at: null
+    notes: Kevin the intern rollerblading with AirPods in, mid-spin, not looking
+  approved: false
+- id: coworker_alarmed_ref
+  name: Sarah gasping
+  description: Sarah gasping, hand over mouth, pointing in horror
+  appearance_notes: ''
+  wardrobe_notes: ''
+  assets:
+  - asset_id: coworker_alarmed_ref-asset
+    raw_path: projects/roller-skating-snl/frames/raw/scene0006_cand0.jpg
+    styled_path: projects/roller-skating-snl/styled/coworker_alarmed_ref.jpg
+    source_ref_id: coworker_alarmed_ref
+    approved: false
+    approved_at: null
+    notes: Sarah gasping, hand over mouth, pointing in horror
+  approved: false
+- id: intern_edge_ref
+  name: Kevin teetering at the very edge
+  description: Kevin teetering at the very edge, arms out for balance, oblivious
+  appearance_notes: ''
+  wardrobe_notes: ''
+  assets:
+  - asset_id: intern_edge_ref-asset
+    raw_path: projects/roller-skating-snl/frames/raw/scene0011_cand10.jpg
+    styled_path: projects/roller-skating-snl/styled/intern_edge_ref.jpg
+    source_ref_id: intern_edge_ref
+    approved: false
+    approved_at: null
+    notes: Kevin teetering at the very edge, arms out for balance, oblivious
+  approved: false
+locations:
+- id: set_office_floor
+  name: Establishing wide of the empty open-plan office floor before the chaos starts
+  description: Establishing wide of the empty open-plan office floor before the chaos
+    starts
+  lighting_notes: ''
+  assets:
+  - asset_id: set_office_floor-asset
+    raw_path: projects/roller-skating-snl/frames/raw/scene0000_cand8.jpg
+    styled_path: projects/roller-skating-snl/styled/set_office_floor.jpg
+    source_ref_id: set_office_floor
+    approved: false
+    approved_at: null
+    notes: Establishing wide of the empty open-plan office floor before the chaos
+      starts
+  approved: false
+props:
+- id: danger_sign_ref
+  name: Wide shot of the unfinished floor edge with a DANGER sign and missing railing
+    ta
+  description: Wide shot of the unfinished floor edge with a DANGER sign and missing
+    railing tape
+  ownership_notes: ''
+  assets:
+  - asset_id: danger_sign_ref-asset
+    raw_path: projects/roller-skating-snl/frames/raw/scene0009_cand1.jpg
+    styled_path: projects/roller-skating-snl/styled/danger_sign_ref.jpg
+    source_ref_id: danger_sign_ref
+    approved: false
+    approved_at: null
+    notes: Wide shot of the unfinished floor edge with a DANGER sign and missing railing
+      tape
+  approved: false

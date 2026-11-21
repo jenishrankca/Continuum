@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Continuum{% endblock %}
+{% block body %}
+  <p class="nav meta">Local production dashboard</p>
+  <h1 class="brand">Continuum</h1>
+  <p class="lede">AI continuity and production status for projects on this machine. CLI stays available via <code>python -m continuum</code>.</p>
+  <p class="meta">Root: {{ root }}</p>
+
+  <section class="section">
+    <h2>Projects</h2>
+    {% if not projects %}
+      <p class="empty">No projects found under <code>projects/*/project.yaml</code>.</p>
+    {% else %}
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Schema</th>
+            <th>Scenes</th>
+            <th>Shots</th>
+            <th>Bible</th>
+            <th>Outputs</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in projects %}
+            <tr>
+              {% if p.error %}
+                <td colspan="6"><span class="err">{{ p.slug }} — {{ p.error }}</span></td>
+              {% else %}
+                <td><a href="/projects/{{ p.slug }}">{{ p.name }}</a><div class="meta">{{ p.slug }}</div></td>
+                <td><span class="pill">v{{ p.schema_version }}</span></td>
+                <td>{{ p.scenes_reviewed }}/{{ p.scenes_total }} reviewed · {{ p.scenes_kept }} kept</td>
+                <td>{{ p.shots_prompted }}/{{ p.shots_total }} detailed</td>
+                <td>{{ p.characters }}c · {{ p.locations }}l · {{ p.props }}p</td>
+                <td>
+                  {% if p.has_storyboard %}<span class="pill ok">storyboard</span>{% endif %}
+                  {% if p.has_shotlist %}<span class="pill ok">shotlist</span>{% endif %}
+                  {% if not p.has_storyboard and not p.has_shotlist %}<span class="meta">—</span>{% endif %}
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}

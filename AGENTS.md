@@ -17,6 +17,8 @@ python -m continuum shots <slug>
 python -m continuum generate-shotlist <slug> [--strict]
 python -m continuum status <slug>
 python -m continuum migrate <slug> [--dry-run]
+python -m continuum bible list|promote|add-character|… <slug>
+python -m continuum dashboard [--port 8765]
 ```
 
 Use `py -3.13` for the venv on this Windows machine (not bare `python3`).

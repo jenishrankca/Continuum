@@ -4,3 +4,6 @@ Pillow
 PyYAML
 requests
 pytest>=8
+fastapi>=0.115
+uvicorn>=0.32
+jinja2>=3.1

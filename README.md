@@ -39,9 +39,20 @@ python -m continuum shots <slug>
 python -m continuum generate-shotlist <slug> [--strict]
 python -m continuum status <slug>
 python -m continuum migrate <slug> [--dry-run]
+python -m continuum bible list <slug>
+python -m continuum dashboard [--host 127.0.0.1] [--port 8765]
 ```
 
-`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form and bumps `schema_version` (currently 2). Use `--dry-run` first.
+`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form, promotes character/location/prop bible entities, and bumps `schema_version` (currently 3). Use `--dry-run` first.
+
+## Local dashboard
+
+```
+.venv\Scripts\activate
+python -m continuum dashboard
+```
+
+Then open **http://127.0.0.1:8765/** in a browser. Shows projects, schema version, scene/shot progress, continuity bible entities, and links to storyboard/shotlist outputs when present. Stop with Ctrl+C. CLI commands keep working.
 
 1. **init** — creates `projects/<slug>/project.yaml` with your locked style bible.
    The `--style` / `--lighting` / `--grade` phrases are stored once and reused

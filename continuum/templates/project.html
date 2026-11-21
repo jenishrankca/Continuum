@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · Continuum{% endblock %}
+{% block body %}
+  <p class="nav"><a href="/">← All projects</a></p>
+  <h1 class="brand">{{ project.name }}</h1>
+  <p class="lede">{{ project.style_phrase }} · {{ project.genre_mode }}</p>
+  <p class="meta">{{ project.slug }} · schema v{{ project.schema_version }}</p>
+
+  <section class="section">
+    <div class="grid">
+      <div class="stat"><strong>{{ project.scenes_reviewed }}/{{ project.scenes_total }}</strong><span>scenes reviewed</span></div>
+      <div class="stat"><strong>{{ project.scenes_kept }}</strong><span>scenes kept</span></div>
+      <div class="stat"><strong>{{ project.shots_prompted }}/{{ project.shots_total }}</strong><span>shots detailed</span></div>
+      <div class="stat"><strong>{{ project.refs_done }}/{{ project.refs_total }}</strong><span>refs restyled</span></div>
+      <div class="stat"><strong>{{ project.characters }}</strong><span>characters</span></div>
+      <div class="stat"><strong>{{ project.locations }}</strong><span>locations</span></div>
+      <div class="stat"><strong>{{ project.props }}</strong><span>props</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Outputs</h2>
+    <p>
+      {% if project.has_storyboard %}
+        <a href="/projects/{{ project.slug }}/output/storyboard.html">storyboard.html</a>
+      {% else %}
+        <span class="meta">No storyboard yet</span>
+      {% endif %}
+      ·
+      {% if project.has_shotlist %}
+        <a href="/projects/{{ project.slug }}/output/shotlist.md">shotlist.md</a>
+      {% else %}
+        <span class="meta">No shotlist yet</span>
+      {% endif %}
+      ·
+      {% if project.has_review_overview %}
+        <a href="/projects/{{ project.slug }}/output/review_overview.html">review overview</a>
+      {% else %}
+        <span class="meta">No review overview</span>
+      {% endif %}
+    </p>
+    <p class="meta">Generate with <code>python -m continuum generate-shotlist {{ project.slug }}</code></p>
+  </section>
+
+  <section class="section">
+    <h2>Continuity bible</h2>
+    {% if not project.characters_detail and not project.locations_detail and not project.props_detail %}
+      <p class="empty">No bible entities yet. Run <code>python -m continuum migrate {{ project.slug }}</code> or <code>bible promote</code>.</p>
+    {% else %}
+      <table>
+        <thead><tr><th>Kind</th><th>Id</th><th>Name</th><th>Status</th><th>Assets</th></tr></thead>
+        <tbody>
+          {% for c in project.characters_detail %}
+            <tr>
+              <td>character</td><td><code>{{ c.id }}</code></td><td>{{ c.name }}</td>
+              <td>{% if c.approved %}<span class="pill ok">approved</span>{% else %}<span class="pill">draft</span>{% endif %}</td>
+              <td>{{ c.approved_assets }}/{{ c.assets }} approved</td>
+            </tr>
+          {% endfor %}
+          {% for loc in project.locations_detail %}
+            <tr>
+              <td>location</td><td><code>{{ loc.id }}</code></td><td>{{ loc.name }}</td>
+              <td>{% if loc.approved %}<span class="pill ok">approved</span>{% else %}<span class="pill">draft</span>{% endif %}</td>
+              <td>{{ loc.approved_assets }}/{{ loc.assets }} approved</td>
+            </tr>
+          {% endfor %}
+          {% for p in project.props_detail %}
+            <tr>
+              <td>prop</td><td><code>{{ p.id }}</code></td><td>{{ p.name }}</td>
+              <td>{% if p.approved %}<span class="pill ok">approved</span>{% else %}<span class="pill">draft</span>{% endif %}</td>
+              <td>{{ p.approved_assets }}/{{ p.assets }} approved</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+  <section class="section">
+    <h2>Shots</h2>
+    {% if not project.shots %}
+      <p class="empty">No shots yet.</p>
+    {% else %}
+      <table>
+        <thead>
+          <tr><th>#</th><th>Id</th><th>Label</th><th>Status</th><th>Camera</th><th>Links</th></tr>
+        </thead>
+        <tbody>
+          {% for s in project.shots %}
+            <tr>
+              <td>{{ s.order }}</td>
+              <td><code>{{ s.id }}</code></td>
+              <td>{{ s.label }}</td>
+              <td><span class="pill {% if s.status == 'prompted' %}ok{% endif %}">{{ s.status }}</span></td>
+              <td class="meta">{{ s.shot_type }} · {{ s.camera_move }}</td>
+              <td class="meta">
+                {% if s.character_ids %}chars: {{ s.character_ids | join(", ") }}{% endif %}
+                {% if s.location_id %} · loc: {{ s.location_id }}{% endif %}
+                {% if s.prop_ids %} · props: {{ s.prop_ids | join(", ") }}{% endif %}
+                {% if s.anchor_ref_id %} · anchor: {{ s.anchor_ref_id }}{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+  <section class="section">
+    <h2>Scenes</h2>
+    <table>
+      <thead><tr><th>#</th><th>Range</th><th>Reviewed</th><th>Kept</th><th>Candidates</th></tr></thead>
+      <tbody>
+        {% for sc in project.scenes %}
+          <tr>
+            <td>{{ sc.scene_index }}</td>
+            <td class="meta">{{ '%.1f'|format(sc.start_s) }}s – {{ '%.1f'|format(sc.end_s) }}s</td>
+            <td>{% if sc.reviewed %}yes{% else %}no{% endif %}</td>
+            <td>{% if sc.kept %}yes{% else %}—{% endif %}</td>
+            <td>{{ sc.candidates }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

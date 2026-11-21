@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Continuum{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #0f1412;
+      --bg1: #1a2420;
+      --ink: #e8efe9;
+      --muted: #9bb0a3;
+      --line: rgba(232, 239, 233, 0.12);
+      --accent: #c4a35a;
+      --accent-2: #6f9e86;
+      --warn: #d9895b;
+      --ok: #7dba8e;
+      --pad: clamp(1.25rem, 3vw, 2.5rem);
+      --max: 72rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(111, 158, 134, 0.22), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(196, 163, 90, 0.14), transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1) 55%, #121816);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { width: min(100% - 2 * var(--pad), var(--max)); margin-inline: auto; padding-block: var(--pad); }
+    .brand {
+      font-family: Fraunces, Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+    .lede { color: var(--muted); max-width: 40rem; margin: 0 0 2rem; line-height: 1.5; }
+    .meta { color: var(--muted); font-size: 0.875rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.65rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .pill.ok { color: var(--ok); border-color: rgba(125, 186, 142, 0.35); }
+    .section { margin-top: 2.25rem; }
+    .section h2 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 500;
+      margin: 0 0 0.75rem;
+    }
+    .grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    }
+    .stat {
+      border-top: 1px solid var(--line);
+      padding-top: 0.65rem;
+    }
+    .stat strong { display: block; font-size: 1.35rem; font-family: Fraunces, Georgia, serif; }
+    .stat span { color: var(--muted); font-size: 0.8rem; }
+    .nav { margin-bottom: 1.5rem; }
+    .empty { color: var(--muted); padding: 1rem 0; }
+    .err { color: #e29a8a; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    {% block body %}{% endblock %}
+  </main>
+</body>
+</html>
