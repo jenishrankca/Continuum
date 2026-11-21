@@ -103,6 +103,8 @@ def migrate_project(root: Path, slug: str, *, dry_run: bool = False) -> MigrateR
     raw.setdefault("ledger_history", [])
     raw.setdefault("continuity_checks", [])
     raw.setdefault("continuity_reports", [])
+    raw.setdefault("film_suggestions", [])
+    raw.setdefault("film_intelligence_runs", [])
 
     # Temporarily write so Project.load can promote (or work in-memory)
     raw["schema_version"] = SCHEMA_VERSION
@@ -113,6 +115,8 @@ def migrate_project(root: Path, slug: str, *, dry_run: bool = False) -> MigrateR
         messages.append("Stage 4: continuity ledger lists initialized (empty until CLI writes)")
     if from_version < 5:
         messages.append("Stage 5: continuity inspection checks/reports initialized")
+    if from_version < 6:
+        messages.append("Stage 6: film intelligence suggestions initialized (editable; not auto-fact)")
 
     bible_created: dict[str, int] | None = None
     if dry_run:

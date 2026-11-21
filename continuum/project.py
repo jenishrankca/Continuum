@@ -13,7 +13,8 @@ from . import paths
 # schema_version 3: character / location / prop bible entities
 # schema_version 4: continuity ledger + scene/shot state + exceptions + history
 # schema_version 5: continuity inspection checks + reports
-SCHEMA_VERSION = 5
+# schema_version 6: film intelligence suggestions (editable; never auto-fact)
+SCHEMA_VERSION = 6
 
 CONTINUITY_STATUSES = (
     "not_checked",
@@ -22,6 +23,9 @@ CONTINUITY_STATUSES = (
     "failed",
     "human_override",
 )
+
+SUGGESTION_STATUSES = ("proposed", "edited", "accepted", "rejected")
+CONFIRM_CONFIDENCE = 0.75  # below this → uncertain; human must explicitly accept
 
 
 @dataclass
@@ -236,6 +240,40 @@ class ContinuityReport:
 
 
 @dataclass
+class FilmSuggestion:
+    """Editable film-intelligence suggestion. Not fact until status=accepted."""
+
+    suggestion_id: str
+    kind: str  # scene_summary | character_appearance | environment | prop_presence
+    target_scope: str  # scene | shot | project
+    target_ref: str = ""
+    proposed_entity_id: Optional[str] = None
+    entity_kind: Optional[str] = None  # character | location | prop
+    title: str = ""
+    summary: str = ""
+    details: dict[str, Any] = field(default_factory=dict)
+    confidence: float = 0.0
+    uncertain: bool = True
+    status: str = "proposed"  # SUGGESTION_STATUSES
+    source: str = "heuristic_opencv"
+    evidence_paths: list[str] = field(default_factory=list)
+    created_at: str = ""
+    updated_at: str = ""
+    reviewed_by: str = ""
+    review_note: str = ""
+
+
+@dataclass
+class FilmIntelligenceRun:
+    run_id: str
+    created_at: str
+    source: str = "heuristic_opencv"
+    summary: str = ""
+    suggestion_ids: list[str] = field(default_factory=list)
+    actor: str = ""
+
+
+@dataclass
 class Project:
     schema_version: int
     slug: str
@@ -252,6 +290,8 @@ class Project:
     ledger_history: list[LedgerHistoryEntry] = field(default_factory=list)
     continuity_checks: list[ContinuityCheck] = field(default_factory=list)
     continuity_reports: list[ContinuityReport] = field(default_factory=list)
+    film_suggestions: list[FilmSuggestion] = field(default_factory=list)
+    film_intelligence_runs: list[FilmIntelligenceRun] = field(default_factory=list)
 
     @staticmethod
     def project_dir(root: Path, slug: str) -> Path:
@@ -467,6 +507,40 @@ class Project:
             )
             for r in data.get("continuity_reports") or []
         ]
+        film_suggestions = [
+            FilmSuggestion(
+                suggestion_id=s["suggestion_id"],
+                kind=s["kind"],
+                target_scope=s.get("target_scope", "project") or "project",
+                target_ref=str(s.get("target_ref", "") or ""),
+                proposed_entity_id=s.get("proposed_entity_id"),
+                entity_kind=s.get("entity_kind"),
+                title=s.get("title", "") or "",
+                summary=s.get("summary", "") or "",
+                details=dict(s.get("details") or {}),
+                confidence=float(s.get("confidence", 0.0) or 0.0),
+                uncertain=bool(s.get("uncertain", True)),
+                status=s.get("status", "proposed") or "proposed",
+                source=s.get("source", "heuristic_opencv") or "heuristic_opencv",
+                evidence_paths=list(s.get("evidence_paths") or []),
+                created_at=s.get("created_at", "") or "",
+                updated_at=s.get("updated_at", "") or "",
+                reviewed_by=s.get("reviewed_by", "") or "",
+                review_note=s.get("review_note", "") or "",
+            )
+            for s in data.get("film_suggestions") or []
+        ]
+        film_intelligence_runs = [
+            FilmIntelligenceRun(
+                run_id=r["run_id"],
+                created_at=r.get("created_at", "") or "",
+                source=r.get("source", "heuristic_opencv") or "heuristic_opencv",
+                summary=r.get("summary", "") or "",
+                suggestion_ids=list(r.get("suggestion_ids") or []),
+                actor=r.get("actor", "") or "",
+            )
+            for r in data.get("film_intelligence_runs") or []
+        ]
         return Project(
             schema_version=data.get("schema_version", 1),
             slug=data["slug"],
@@ -483,6 +557,8 @@ class Project:
             ledger_history=ledger_history,
             continuity_checks=continuity_checks,
             continuity_reports=continuity_reports,
+            film_suggestions=film_suggestions,
+            film_intelligence_runs=film_intelligence_runs,
         )
 
     @staticmethod

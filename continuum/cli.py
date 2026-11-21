@@ -8,6 +8,7 @@ from .project import Project, StyleBible, SCHEMA_VERSION
 from . import bible
 from . import ledger
 from . import inspection
+from . import intelligence
 from . import detect, review, shots as shots_module, lint, render_markdown, render_html
 from . import migrate as migrate_module
 from . import paths
@@ -165,6 +166,11 @@ def cmd_status(args: argparse.Namespace) -> None:
         f"{len(project.continuity_reports)} reports; "
         f"gen_done={sum(1 for s in project.shots if s.generation_complete)} "
         f"continuity_ok={sum(1 for s in project.shots if s.continuity_approved)}"
+    )
+    print(
+        f"Intel:       {len(project.film_suggestions)} suggestions "
+        f"({sum(1 for s in project.film_suggestions if s.uncertain)} uncertain), "
+        f"{len(project.film_intelligence_runs)} runs"
     )
 
 
@@ -525,6 +531,81 @@ def cmd_inspect(args: argparse.Namespace) -> None:
     raise SystemExit(f"Unknown inspect action: {action}")
 
 
+def cmd_intel(args: argparse.Namespace) -> None:
+    root = Path.cwd()
+    project = Project.load(root, args.slug)
+    action = args.intel_action
+
+    if action == "analyze":
+        run = intelligence.analyze_project(
+            root, project, clear_proposed=not args.keep, actor="cli"
+        )
+        project.save(root)
+        print(f"Run {run.run_id}: {run.summary}")
+        if intelligence.local_llm_available():
+            print("Note: LOCAL_LLM_URL/OLLAMA_HOST is set but Stage 6 MVP uses heuristics only.")
+        print(intelligence.summarize_intelligence(project))
+        return
+
+    if action == "list":
+        if args.status:
+            rows = [s for s in project.film_suggestions if s.status == args.status]
+            print(f"{len(rows)} suggestion(s) with status={args.status}")
+            for sug in rows:
+                flag = " uncertain" if sug.uncertain else ""
+                print(
+                    f"  {sug.suggestion_id} [{sug.status}]{flag} {sug.kind} "
+                    f"conf={sug.confidence:.2f}: {sug.title}"
+                )
+            return
+        print(intelligence.summarize_intelligence(project))
+        return
+
+    if action == "show":
+        print(intelligence.format_suggestion(intelligence.get_suggestion(project, args.id)))
+        return
+
+    if action == "edit":
+        sug = intelligence.edit_suggestion(
+            project,
+            args.id,
+            summary=args.summary,
+            title=args.title,
+            proposed_entity_id=args.entity_id,
+            clear_entity_id=args.clear_entity_id,
+            confidence=args.confidence,
+            reviewed_by=args.by,
+        )
+        project.save(root)
+        print(f"Edited {sug.suggestion_id} -> status={sug.status} uncertain={sug.uncertain}")
+        return
+
+    if action == "accept":
+        sug = intelligence.accept_suggestion(
+            project,
+            args.id,
+            reviewed_by=args.by,
+            review_note=args.note or "",
+            allow_uncertain=args.allow_uncertain,
+        )
+        project.save(root)
+        print(
+            f"Accepted {sug.suggestion_id} by {sug.reviewed_by} "
+            "(not written to bible/ledger as silent fact)"
+        )
+        return
+
+    if action == "reject":
+        sug = intelligence.reject_suggestion(
+            project, args.id, reviewed_by=args.by, review_note=args.reason or "rejected"
+        )
+        project.save(root)
+        print(f"Rejected {sug.suggestion_id}")
+        return
+
+    raise SystemExit(f"Unknown intel action: {action}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="continuum")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -807,6 +888,65 @@ def build_parser() -> argparse.ArgumentParser:
     p_ia.add_argument("--shot", required=True)
     p_ia.add_argument("--by", default="jay")
     p_ia.set_defaults(func=cmd_inspect)
+
+    p_intel = sub.add_parser(
+        "intel",
+        help="Film intelligence suggestions (Stage 6; editable, never auto-fact)",
+    )
+    intel_sub = p_intel.add_subparsers(dest="intel_action", required=True)
+
+    p_ia_an = intel_sub.add_parser("analyze", help="Generate editable suggestions")
+    p_ia_an.add_argument("slug")
+    p_ia_an.add_argument(
+        "--keep",
+        action="store_true",
+        help="Keep prior proposed suggestions (default replaces proposed only)",
+    )
+    p_ia_an.set_defaults(func=cmd_intel)
+
+    p_ia_ls = intel_sub.add_parser("list", help="List / summarize suggestions")
+    p_ia_ls.add_argument("slug")
+    p_ia_ls.add_argument(
+        "--status",
+        choices=["proposed", "edited", "accepted", "rejected"],
+        default=None,
+    )
+    p_ia_ls.set_defaults(func=cmd_intel)
+
+    p_ia_sh = intel_sub.add_parser("show", help="Show one suggestion")
+    p_ia_sh.add_argument("slug")
+    p_ia_sh.add_argument("--id", required=True)
+    p_ia_sh.set_defaults(func=cmd_intel)
+
+    p_ia_ed = intel_sub.add_parser("edit", help="Edit a suggestion (still not fact)")
+    p_ia_ed.add_argument("slug")
+    p_ia_ed.add_argument("--id", required=True)
+    p_ia_ed.add_argument("--summary", default=None)
+    p_ia_ed.add_argument("--title", default=None)
+    p_ia_ed.add_argument("--entity-id", default=None)
+    p_ia_ed.add_argument("--clear-entity-id", action="store_true")
+    p_ia_ed.add_argument("--confidence", type=float, default=None)
+    p_ia_ed.add_argument("--by", default="human")
+    p_ia_ed.set_defaults(func=cmd_intel)
+
+    p_ia_ac = intel_sub.add_parser("accept", help="Human-accept a suggestion")
+    p_ia_ac.add_argument("slug")
+    p_ia_ac.add_argument("--id", required=True)
+    p_ia_ac.add_argument("--by", default="jay")
+    p_ia_ac.add_argument("--note", default="")
+    p_ia_ac.add_argument(
+        "--allow-uncertain",
+        action="store_true",
+        help="Required to accept uncertain / low-confidence suggestions after review",
+    )
+    p_ia_ac.set_defaults(func=cmd_intel)
+
+    p_ia_rj = intel_sub.add_parser("reject", help="Reject a suggestion")
+    p_ia_rj.add_argument("slug")
+    p_ia_rj.add_argument("--id", required=True)
+    p_ia_rj.add_argument("--by", default="jay")
+    p_ia_rj.add_argument("--reason", default="rejected")
+    p_ia_rj.set_defaults(func=cmd_intel)
 
     return parser
 

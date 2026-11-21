@@ -42,14 +42,17 @@ python -m continuum migrate <slug> [--dry-run]
 python -m continuum bible list <slug>
 python -m continuum ledger list <slug>
 python -m continuum inspect run <slug>
+python -m continuum intel analyze <slug>
 python -m continuum dashboard [--host 127.0.0.1] [--port 8765]
 ```
 
-`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form, promotes bible entities, initializes ledger + inspection stores, and bumps `schema_version` (currently 5). Use `--dry-run` first.
+`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form, promotes bible entities, initializes ledger + inspection + film-intelligence stores, and bumps `schema_version` (currently 6). Use `--dry-run` first.
 
 `ledger` records what is true at each scene/shot (character/wardrobe/prop/location), intentional exceptions with approval, and append-only history.
 
 `inspect` runs Stage 5 continuity checks (shot-to-shot, ref compare, ledger transitions) with evidence + confidence; supports human override. Generation complete never implies continuity approval.
+
+`intel` runs Stage 6 film-intelligence heuristics into editable suggestions (scene/character/environment/prop). Uncertain IDs are never treated as fact until a human accepts them.
 
 ## Local dashboard
 

@@ -202,9 +202,9 @@ def test_migrate_to_schema_5(tmp_path: Path) -> None:
     with open(proj / "project.yaml", "w", encoding="utf-8") as f:
         yaml.safe_dump(data, f)
     report = migrate_project(tmp_path, slug, dry_run=False)
-    assert report.to_version == 5
+    assert report.to_version == SCHEMA_VERSION
     loaded = Project.load(tmp_path, slug)
-    assert loaded.schema_version == 5
+    assert loaded.schema_version == SCHEMA_VERSION
     assert loaded.continuity_checks == []
     assert loaded.shots[0].continuity_status == "not_checked"
     assert loaded.shots[0].generation_complete is False
@@ -220,5 +220,5 @@ def test_run_inspection_writes_report(tmp_path: Path) -> None:
     (tmp_path / "projects" / "demo").mkdir(parents=True, exist_ok=True)
     project.save(tmp_path)
     loaded = Project.load(tmp_path, "demo")
-    assert loaded.schema_version == 5
+    assert loaded.schema_version == SCHEMA_VERSION
     assert len(loaded.continuity_checks) >= 1
