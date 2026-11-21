@@ -3,3 +3,4 @@ scenedetect
 Pillow
 PyYAML
 requests
+pytest>=8

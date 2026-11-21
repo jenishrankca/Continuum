@@ -1,13 +1,16 @@
 """Project data model: the single project.yaml source of truth."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
 
 import yaml
 
-SCHEMA_VERSION = 1
+from . import paths
+
+# schema_version 2: paths stored relative to Continuum root when under root
+SCHEMA_VERSION = 2
 
 
 @dataclass
@@ -86,19 +89,52 @@ class Project:
     def yaml_path(root: Path, slug: str) -> Path:
         return Project.project_dir(root, slug) / "project.yaml"
 
+    def _to_storage_dict(self, root: Path) -> dict:
+        """Serialize with root-relative paths for portability."""
+        data = asdict(self)
+        data["schema_version"] = SCHEMA_VERSION
+        data["source_video_path"] = paths.to_stored(root, self.source_video_path)
+        for scene in data.get("scenes", []):
+            scene["chosen_frame_path"] = paths.to_stored(root, scene.get("chosen_frame_path"))
+            for cand in scene.get("candidates", []):
+                cand["path"] = paths.to_stored(root, cand.get("path"))
+        for ref in data.get("reference_images", []):
+            ref["raw_frame_path"] = paths.to_stored(root, ref.get("raw_frame_path"))
+            ref["styled_frame_path"] = paths.to_stored(root, ref.get("styled_frame_path"))
+        for shot in data.get("shots", []):
+            shot["raw_frame_path"] = paths.to_stored(root, shot.get("raw_frame_path"))
+        return data
+
+    def _resolve_runtime_paths(self, root: Path) -> None:
+        """Resolve stored paths to absolute for in-memory use."""
+        self.source_video_path = paths.to_absolute(root, self.source_video_path) or ""
+        for scene in self.scenes:
+            scene.chosen_frame_path = paths.to_absolute(root, scene.chosen_frame_path)
+            for cand in scene.candidates:
+                cand.path = paths.to_absolute(root, cand.path) or cand.path
+        for ref in self.reference_images:
+            ref.raw_frame_path = paths.to_absolute(root, ref.raw_frame_path) or ref.raw_frame_path
+            ref.styled_frame_path = paths.to_absolute(root, ref.styled_frame_path)
+        for shot in self.shots:
+            shot.raw_frame_path = paths.to_absolute(root, shot.raw_frame_path) or shot.raw_frame_path
+
     # -- persistence -------------------------------------------------------
     def save(self, root: Path) -> None:
         path = self.yaml_path(root, self.slug)
         path.parent.mkdir(parents=True, exist_ok=True)
+        data = self._to_storage_dict(root)
         with open(path, "w", encoding="utf-8") as f:
-            yaml.safe_dump(asdict(self), f, sort_keys=False, allow_unicode=True)
+            yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+        self.schema_version = SCHEMA_VERSION
 
     @staticmethod
     def load(root: Path, slug: str) -> "Project":
         path = Project.yaml_path(root, slug)
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        return Project._from_dict(data)
+        project = Project._from_dict(data)
+        project._resolve_runtime_paths(root)
+        return project
 
     @staticmethod
     def _from_dict(data: dict) -> "Project":
@@ -118,7 +154,7 @@ class Project:
         refs = [ReferenceImage(**r) for r in data.get("reference_images", [])]
         shots = [Shot(**sh) for sh in data.get("shots", [])]
         return Project(
-            schema_version=data.get("schema_version", SCHEMA_VERSION),
+            schema_version=data.get("schema_version", 1),
             slug=data["slug"],
             style=style,
             source_video_path=data["source_video_path"],

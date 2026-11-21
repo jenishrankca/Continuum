@@ -38,7 +38,10 @@ python -m continuum restyle <slug> [--provider manual|gemini|local] [--check]
 python -m continuum shots <slug>
 python -m continuum generate-shotlist <slug> [--strict]
 python -m continuum status <slug>
+python -m continuum migrate <slug> [--dry-run]
 ```
+
+`migrate` rewrites absolute media paths in `project.yaml` to Continuum-root-relative form and bumps `schema_version` (currently 2). Use `--dry-run` first.
 
 1. **init** — creates `projects/<slug>/project.yaml` with your locked style bible.
    The `--style` / `--lighting` / `--grade` phrases are stored once and reused

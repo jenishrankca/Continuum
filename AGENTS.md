@@ -16,6 +16,7 @@ python -m continuum restyle <slug> [--provider manual|gemini|local]
 python -m continuum shots <slug>
 python -m continuum generate-shotlist <slug> [--strict]
 python -m continuum status <slug>
+python -m continuum migrate <slug> [--dry-run]
 ```
 
 Use `py -3.13` for the venv on this Windows machine (not bare `python3`).

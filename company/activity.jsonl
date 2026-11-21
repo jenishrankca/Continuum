@@ -11,3 +11,4 @@
 {"ts":"2026-11-21T06:21:00Z","agent":"ceo","event":"stop","item":"20261121-04","summary":"Jay deferred dates and dashboard URL"}
 {"ts":"2026-11-21T06:21:30Z","agent":"ceo","event":"stop","item":"20261121-05","summary":"Jay chose gitignore large media; LFS later if asked"}
 {"ts":"2026-11-21T06:22:00Z","agent":"ceo","event":"start","item":"20261121-03","summary":"Stage 2 in-progress after rebrand push"}
+{"ts":"2026-11-21T06:30:00Z","agent":"tech-lead","event":"stop","item":"20261121-03","summary":"Stage 2 relative paths + migrate + tests; sample migrated to schema 2"}

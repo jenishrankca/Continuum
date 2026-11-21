@@ -6,6 +6,8 @@ from pathlib import Path
 
 from .project import Project, StyleBible, SCHEMA_VERSION
 from . import detect, review, shots as shots_module, lint, render_markdown, render_html
+from . import migrate as migrate_module
+from . import paths
 from .restyle import get_provider
 from .envfile import load_dotenv
 
@@ -31,11 +33,13 @@ def cmd_init(args: argparse.Namespace) -> None:
         genre_mode=args.genre,
         default_restyle_provider=args.provider,
     )
+    # Store relative when under Continuum root; absolute otherwise (external media)
+    stored_source = paths.to_stored(root, source.resolve()) or str(source.resolve())
     project = Project(
         schema_version=SCHEMA_VERSION,
         slug=slug,
         style=style,
-        source_video_path=str(source.resolve()),
+        source_video_path=stored_source,
     )
     project.save(root)
     print(f"Created project '{slug}' at {Project.project_dir(root, slug)}")
@@ -142,9 +146,22 @@ def cmd_status(args: argparse.Namespace) -> None:
     shots_prompted = sum(1 for s in project.shots if s.status == "prompted")
 
     print(f"Project: {project.style.project_name} ({project.slug})")
+    print(f"Schema:      {project.schema_version}")
     print(f"Scenes:      {reviewed}/{total_scenes} reviewed, {kept} kept")
     print(f"References:  {refs_done}/{refs} restyled  (target 8-12 total)")
     print(f"Shots:       {shots_prompted}/{shots_total} fully detailed")
+
+
+def cmd_migrate(args: argparse.Namespace) -> None:
+    root = Path.cwd()
+    report = migrate_module.migrate_project(root, args.slug, dry_run=args.dry_run)
+    mode = "dry-run" if report.dry_run else "applied"
+    print(f"Migrate {report.slug} ({mode}): schema {report.from_version} -> {report.to_version}")
+    print(f"Paths rewritten: {report.paths_rewritten}")
+    for line in report.messages[:40]:
+        print(f"  {line}")
+    if len(report.messages) > 40:
+        print(f"  ... and {len(report.messages) - 40} more")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -190,6 +207,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_status = sub.add_parser("status", help="Show progress summary")
     p_status.add_argument("slug")
     p_status.set_defaults(func=cmd_status)
+
+    p_migrate = sub.add_parser(
+        "migrate",
+        help="Rewrite project paths to root-relative form and bump schema_version",
+    )
+    p_migrate.add_argument("slug")
+    p_migrate.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would change without writing project.yaml",
+    )
+    p_migrate.set_defaults(func=cmd_migrate)
 
     return parser
 
