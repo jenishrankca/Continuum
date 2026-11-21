@@ -175,9 +175,9 @@ def test_migrate_to_schema_4(tmp_path: Path) -> None:
         yaml.safe_dump(data, f)
 
     report = migrate_project(tmp_path, slug, dry_run=False)
-    assert report.to_version == 4
+    assert report.to_version == SCHEMA_VERSION
     loaded = Project.load(tmp_path, slug)
-    assert loaded.schema_version == 4
+    assert loaded.schema_version == SCHEMA_VERSION
     assert loaded.continuity_states == []
     assert loaded.continuity_exceptions == []
     assert loaded.ledger_history == []
@@ -198,7 +198,7 @@ def test_roundtrip_yaml(tmp_path: Path) -> None:
     (tmp_path / "projects" / "rt").mkdir(parents=True)
     project.save(tmp_path)
     loaded = Project.load(tmp_path, "rt")
-    assert loaded.schema_version == 4
+    assert loaded.schema_version == SCHEMA_VERSION
     assert len(loaded.continuity_states) == 1
     assert loaded.continuity_states[0].character_states[0].wardrobe == "coat"
     assert len(loaded.ledger_history) >= 2

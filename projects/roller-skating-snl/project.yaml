@@ -1,4 +1,4 @@
-schema_version: 4
+schema_version: 5
 slug: roller-skating-snl
 style:
   project_name: Roller Skating SNL Sketch
@@ -735,6 +735,9 @@ shots:
   location_id: set_office_floor
   prop_ids: []
   continuity_state_id: null
+  continuity_status: warning
+  generation_complete: true
+  continuity_approved: false
 - id: shot_002
   order: 2
   label: Coworker glides in, all confidence
@@ -754,6 +757,9 @@ shots:
   location_id: null
   prop_ids: []
   continuity_state_id: null
+  continuity_status: warning
+  generation_complete: false
+  continuity_approved: false
 - id: shot_003
   order: 3
   label: The intern joins in, oblivious and on a call
@@ -773,6 +779,9 @@ shots:
   location_id: null
   prop_ids: []
   continuity_state_id: null
+  continuity_status: warning
+  generation_complete: false
+  continuity_approved: false
 - id: shot_004
   order: 4
   label: Sarah clocks the danger
@@ -793,6 +802,9 @@ shots:
   location_id: null
   prop_ids: []
   continuity_state_id: null
+  continuity_status: passed
+  generation_complete: false
+  continuity_approved: false
 - id: shot_005
   order: 5
   label: Sarah reacts in horror
@@ -812,6 +824,9 @@ shots:
   location_id: null
   prop_ids: []
   continuity_state_id: null
+  continuity_status: warning
+  generation_complete: false
+  continuity_approved: false
 - id: shot_006
   order: 6
   label: Kevin skates the edge, totally unaware
@@ -833,6 +848,9 @@ shots:
   prop_ids:
   - danger_sign_ref
   continuity_state_id: null
+  continuity_status: failed
+  generation_complete: false
+  continuity_approved: false
 - id: shot_007
   order: 7
   label: The near-miss recovery
@@ -853,6 +871,9 @@ shots:
   location_id: null
   prop_ids: []
   continuity_state_id: null
+  continuity_status: failed
+  generation_complete: false
+  continuity_approved: false
 characters:
 - id: coworker_ref
   name: Sarah from HR skating backward
@@ -1142,3 +1163,296 @@ ledger_history:
       approved_at: '2026-11-21'
       approved_by: jay
       created_at: '2026-11-21T06:48:02Z'
+continuity_checks:
+- check_id: chk-780a462def
+  check_type: shot_to_shot
+  subject: shot_001->shot_002
+  status: warning
+  confidence: 0.661
+  message: moderate visual/lighting drift
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0000_cand8.jpg
+  - projects/roller-skating-snl/frames/raw/scene0001_cand11.jpg
+  metrics:
+    mean_color_delta: 3.51
+    brightness_delta: 2.02
+    mean_pixel_diff: 38.05
+    orb_match_ratio: 0.1035
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-0698b22512
+  check_type: shot_to_shot
+  subject: shot_002->shot_003
+  status: warning
+  confidence: 0.667
+  message: moderate visual/lighting drift
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0001_cand11.jpg
+  - projects/roller-skating-snl/frames/raw/scene0002_cand2.jpg
+  metrics:
+    mean_color_delta: 14.65
+    brightness_delta: 8.46
+    mean_pixel_diff: 45.78
+    orb_match_ratio: 0.185
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-ae0b6db018
+  check_type: shot_to_shot
+  subject: shot_003->shot_004
+  status: passed
+  confidence: 0.667
+  message: frames look consistent under OpenCV metrics
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0002_cand2.jpg
+  - projects/roller-skating-snl/frames/raw/scene0004_cand7.jpg
+  metrics:
+    mean_color_delta: 16.01
+    brightness_delta: 9.24
+    mean_pixel_diff: 37.63
+    orb_match_ratio: 0.1663
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-df3bbbe3e1
+  check_type: shot_to_shot
+  subject: shot_004->shot_005
+  status: passed
+  confidence: 0.905
+  message: frames look consistent under OpenCV metrics
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0004_cand7.jpg
+  - projects/roller-skating-snl/frames/raw/scene0006_cand0.jpg
+  metrics:
+    mean_color_delta: 6.17
+    brightness_delta: 3.56
+    mean_pixel_diff: 16.05
+    orb_match_ratio: 0.3633
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-a759b1d89f
+  check_type: shot_to_shot
+  subject: shot_005->shot_006
+  status: warning
+  confidence: 0.53
+  message: moderate visual/lighting drift
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0006_cand0.jpg
+  - projects/roller-skating-snl/frames/raw/scene0009_cand1.jpg
+  metrics:
+    mean_color_delta: 23.63
+    brightness_delta: 13.64
+    mean_pixel_diff: 44.71
+    orb_match_ratio: 0.1106
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-79fae143bf
+  check_type: shot_to_shot
+  subject: shot_006->shot_007
+  status: failed
+  confidence: 0.095
+  message: large visual/lighting drift
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0009_cand1.jpg
+  - projects/roller-skating-snl/frames/raw/scene0011_cand10.jpg
+  metrics:
+    mean_color_delta: 132.78
+    brightness_delta: 76.66
+    mean_pixel_diff: 79.34
+    orb_match_ratio: 0.0773
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-99d61b86f5
+  check_type: ref_compare
+  subject: shot_002:coworker_ref
+  status: passed
+  confidence: 1.0
+  message: 'Character coworker_ref: frames look consistent under OpenCV metrics'
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0001_cand11.jpg
+  - projects/roller-skating-snl/styled/coworker_ref.jpg
+  metrics:
+    mean_color_delta: 0.0
+    brightness_delta: 0.0
+    mean_pixel_diff: 0.0
+    orb_match_ratio: 1.0
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-43ec04a562
+  check_type: ref_compare
+  subject: shot_003:intern_ref
+  status: passed
+  confidence: 1.0
+  message: 'Character intern_ref: frames look consistent under OpenCV metrics'
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0002_cand2.jpg
+  - projects/roller-skating-snl/styled/intern_ref.jpg
+  metrics:
+    mean_color_delta: 0.0
+    brightness_delta: 0.0
+    mean_pixel_diff: 0.0
+    orb_match_ratio: 1.0
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-35756398e9
+  check_type: ref_compare
+  subject: shot_004:coworker_alarmed_ref
+  status: passed
+  confidence: 0.905
+  message: 'Character coworker_alarmed_ref: frames look consistent under OpenCV metrics'
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0004_cand7.jpg
+  - projects/roller-skating-snl/styled/coworker_alarmed_ref.jpg
+  metrics:
+    mean_color_delta: 6.17
+    brightness_delta: 3.56
+    mean_pixel_diff: 16.05
+    orb_match_ratio: 0.3633
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-c2206ed368
+  check_type: ref_compare
+  subject: shot_005:coworker_alarmed_ref
+  status: passed
+  confidence: 1.0
+  message: 'Character coworker_alarmed_ref: frames look consistent under OpenCV metrics'
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0006_cand0.jpg
+  - projects/roller-skating-snl/styled/coworker_alarmed_ref.jpg
+  metrics:
+    mean_color_delta: 0.0
+    brightness_delta: 0.0
+    mean_pixel_diff: 0.0
+    orb_match_ratio: 1.0
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-e1dab5f545
+  check_type: ref_compare
+  subject: shot_007:intern_edge_ref
+  status: passed
+  confidence: 1.0
+  message: 'Character intern_edge_ref: frames look consistent under OpenCV metrics'
+  evidence_paths:
+  - projects/roller-skating-snl/frames/raw/scene0011_cand10.jpg
+  - projects/roller-skating-snl/styled/intern_edge_ref.jpg
+  metrics:
+    mean_color_delta: 0.0
+    brightness_delta: 0.0
+    mean_pixel_diff: 0.0
+    orb_match_ratio: 1.0
+    orb_used: true
+    method: opencv_color_bright_pixel_orb
+  related_exception_id: null
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-5b6c429315
+  check_type: ledger_transition
+  subject: scene:0->1:prop:danger_sign_ref:location_note
+  status: passed
+  confidence: 0.95
+  message: Prop danger_sign_ref location_note 'on wall' -> 'held by coworker' covered
+    by exception exc-e4918b35c7
+  evidence_paths: []
+  metrics:
+    field: prop.location_note
+    before: on wall
+    after: held by coworker
+  related_exception_id: exc-e4918b35c7
+  override_reason: ''
+  override_by: ''
+  override_at: null
+  created_at: '2026-11-21T06:53:46Z'
+- check_id: chk-d5c6ffeff6
+  check_type: ledger_transition
+  subject: scene:0->1:prop:danger_sign_ref:owner_character_id
+  status: human_override
+  confidence: 0.85
+  message: Prop danger_sign_ref owner_character_id '' -> 'coworker_ref' without approved
+    exception
+  evidence_paths: []
+  metrics:
+    field: prop.owner_character_id
+    before: ''
+    after: coworker_ref
+  related_exception_id: null
+  override_reason: Owner change covered by same intentional beat as location_note;
+    Stage 5 smoke
+  override_by: jay
+  override_at: '2026-11-21'
+  created_at: '2026-11-21T06:53:46Z'
+continuity_reports:
+- report_id: rep-2d46e1afa1
+  created_at: '2026-11-21T06:53:46Z'
+  scope: project
+  summary: '13 checks: passed=8, warning=3, failed=2'
+  check_ids:
+  - chk-780a462def
+  - chk-0698b22512
+  - chk-ae0b6db018
+  - chk-df3bbbe3e1
+  - chk-a759b1d89f
+  - chk-79fae143bf
+  - chk-99d61b86f5
+  - chk-43ec04a562
+  - chk-35756398e9
+  - chk-c2206ed368
+  - chk-e1dab5f545
+  - chk-5b6c429315
+  - chk-d5c6ffeff6
+  counts:
+    not_checked: 0
+    passed: 8
+    warning: 3
+    failed: 2
+    human_override: 0
+  actor: cli

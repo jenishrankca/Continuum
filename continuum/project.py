@@ -12,7 +12,16 @@ from . import paths
 # schema_version 2: root-relative paths
 # schema_version 3: character / location / prop bible entities
 # schema_version 4: continuity ledger + scene/shot state + exceptions + history
-SCHEMA_VERSION = 4
+# schema_version 5: continuity inspection checks + reports
+SCHEMA_VERSION = 5
+
+CONTINUITY_STATUSES = (
+    "not_checked",
+    "passed",
+    "warning",
+    "failed",
+    "human_override",
+)
 
 
 @dataclass
@@ -118,6 +127,9 @@ class Shot:
     location_id: Optional[str] = None
     prop_ids: list[str] = field(default_factory=list)
     continuity_state_id: Optional[str] = None
+    continuity_status: str = "not_checked"
+    generation_complete: bool = False
+    continuity_approved: bool = False  # never set True merely because generation finished
 
 
 @dataclass
@@ -192,6 +204,38 @@ class LedgerHistoryEntry:
 
 
 @dataclass
+class ContinuityCheck:
+    """One inspection finding with status, confidence, and evidence paths."""
+
+    check_id: str
+    check_type: str  # shot_to_shot | ref_compare | ledger_transition
+    subject: str
+    status: str  # CONTINUITY_STATUSES
+    confidence: float = 0.0
+    message: str = ""
+    evidence_paths: list[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    related_exception_id: Optional[str] = None
+    override_reason: str = ""
+    override_by: str = ""
+    override_at: Optional[str] = None
+    created_at: str = ""
+
+
+@dataclass
+class ContinuityReport:
+    """Summary of an inspection run."""
+
+    report_id: str
+    created_at: str
+    scope: str = "project"
+    summary: str = ""
+    check_ids: list[str] = field(default_factory=list)
+    counts: dict[str, int] = field(default_factory=dict)
+    actor: str = ""
+
+
+@dataclass
 class Project:
     schema_version: int
     slug: str
@@ -206,6 +250,8 @@ class Project:
     continuity_states: list[ContinuityState] = field(default_factory=list)
     continuity_exceptions: list[ContinuityException] = field(default_factory=list)
     ledger_history: list[LedgerHistoryEntry] = field(default_factory=list)
+    continuity_checks: list[ContinuityCheck] = field(default_factory=list)
+    continuity_reports: list[ContinuityReport] = field(default_factory=list)
 
     @staticmethod
     def project_dir(root: Path, slug: str) -> Path:
@@ -322,6 +368,9 @@ class Project:
                     location_id=sh.get("location_id"),
                     prop_ids=list(sh.get("prop_ids") or []),
                     continuity_state_id=sh.get("continuity_state_id"),
+                    continuity_status=sh.get("continuity_status", "not_checked") or "not_checked",
+                    generation_complete=bool(sh.get("generation_complete", False)),
+                    continuity_approved=bool(sh.get("continuity_approved", False)),
                 )
             )
         characters = [
@@ -388,6 +437,36 @@ class Project:
             )
             for h in data.get("ledger_history") or []
         ]
+        continuity_checks = [
+            ContinuityCheck(
+                check_id=c["check_id"],
+                check_type=c["check_type"],
+                subject=c["subject"],
+                status=c.get("status", "not_checked") or "not_checked",
+                confidence=float(c.get("confidence", 0.0) or 0.0),
+                message=c.get("message", "") or "",
+                evidence_paths=list(c.get("evidence_paths") or []),
+                metrics=dict(c.get("metrics") or {}),
+                related_exception_id=c.get("related_exception_id"),
+                override_reason=c.get("override_reason", "") or "",
+                override_by=c.get("override_by", "") or "",
+                override_at=c.get("override_at"),
+                created_at=c.get("created_at", "") or "",
+            )
+            for c in data.get("continuity_checks") or []
+        ]
+        continuity_reports = [
+            ContinuityReport(
+                report_id=r["report_id"],
+                created_at=r.get("created_at", "") or "",
+                scope=r.get("scope", "project") or "project",
+                summary=r.get("summary", "") or "",
+                check_ids=list(r.get("check_ids") or []),
+                counts={str(k): int(v) for k, v in (r.get("counts") or {}).items()},
+                actor=r.get("actor", "") or "",
+            )
+            for r in data.get("continuity_reports") or []
+        ]
         return Project(
             schema_version=data.get("schema_version", 1),
             slug=data["slug"],
@@ -402,6 +481,8 @@ class Project:
             continuity_states=continuity_states,
             continuity_exceptions=continuity_exceptions,
             ledger_history=ledger_history,
+            continuity_checks=continuity_checks,
+            continuity_reports=continuity_reports,
         )
 
     @staticmethod

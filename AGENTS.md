@@ -19,6 +19,7 @@ python -m continuum status <slug>
 python -m continuum migrate <slug> [--dry-run]
 python -m continuum bible list|promote|add-character|… <slug>
 python -m continuum ledger list|show|set-character|set-location|set-prop|copy|exception|… <slug>
+python -m continuum inspect run|list|show|override|mark-generated|approve-shot <slug>
 python -m continuum dashboard [--port 8765]
 python -m continuum studio-dashboard [--rebuild|--open|--serve]
 ```
@@ -51,10 +52,17 @@ Ponytail (`DietrichGebert/ponytail`, MIT) is already installed for Claude Code /
 
 ### Continuity ledger (Stage 4)
 
-- Schema 4 adds `continuity_states`, `continuity_exceptions`, `ledger_history` on `project.yaml`.
+- Schema 4+ adds `continuity_states`, `continuity_exceptions`, `ledger_history` on `project.yaml`.
 - Write/query via `python -m continuum ledger …` (list/show/set-*/copy/exception/approve-exception/query-*/history).
 - History is append-only; approved exceptions are recorded with actor + timestamp.
 - Bible entity ids must exist before ledger writes reference them.
+
+### Continuity inspection (Stage 5)
+
+- Schema 5 adds `continuity_checks` + `continuity_reports`; shot fields `continuity_status`, `generation_complete`, `continuity_approved`.
+- Statuses: `not_checked` | `passed` | `warning` | `failed` | `human_override`.
+- Engine uses local OpenCV only (color/brightness/pixel/ORB) — no model downloads.
+- `inspect mark-generated` never sets `continuity_approved`; use `inspect approve-shot` or `inspect override`.
 
 ### ComfyUI / local gen (Stages 8–9)
 

@@ -7,6 +7,7 @@ from pathlib import Path
 from .project import Project, StyleBible, SCHEMA_VERSION
 from . import bible
 from . import ledger
+from . import inspection
 from . import detect, review, shots as shots_module, lint, render_markdown, render_html
 from . import migrate as migrate_module
 from . import paths
@@ -158,6 +159,12 @@ def cmd_status(args: argparse.Namespace) -> None:
         f"Ledger:      {len(project.continuity_states)} states, "
         f"{len(project.continuity_exceptions)} exceptions, "
         f"{len(project.ledger_history)} history"
+    )
+    print(
+        f"Inspect:     {len(project.continuity_checks)} checks, "
+        f"{len(project.continuity_reports)} reports; "
+        f"gen_done={sum(1 for s in project.shots if s.generation_complete)} "
+        f"continuity_ok={sum(1 for s in project.shots if s.continuity_approved)}"
     )
 
 
@@ -459,6 +466,65 @@ def cmd_ledger(args: argparse.Namespace) -> None:
     raise SystemExit(f"Unknown ledger action: {action}")
 
 
+def cmd_inspect(args: argparse.Namespace) -> None:
+    root = Path.cwd()
+    project = Project.load(root, args.slug)
+    action = args.inspect_action
+
+    if action == "run":
+        report = inspection.run_inspection(
+            root, project, clear_previous=not args.keep, actor="cli"
+        )
+        project.save(root)
+        print(f"Report {report.report_id}: {report.summary}")
+        print(inspection.summarize_inspection(project))
+        return
+
+    if action == "list":
+        print(inspection.summarize_inspection(project))
+        return
+
+    if action == "show":
+        chk = next((c for c in project.continuity_checks if c.check_id == args.id), None)
+        if chk is None:
+            raise SystemExit(f"Unknown check_id '{args.id}'")
+        print(inspection.format_check(chk))
+        return
+
+    if action == "override":
+        chk = inspection.override_check(
+            project, args.id, reason=args.reason, overridden_by=args.by
+        )
+        project.save(root)
+        print(f"Overrode {chk.check_id} -> human_override by {chk.override_by}")
+        return
+
+    if action == "mark-generated":
+        shot = inspection.mark_generation_complete(
+            project, args.shot, complete=not args.clear
+        )
+        project.save(root)
+        print(
+            f"Shot {shot.id}: generation_complete={shot.generation_complete} "
+            f"continuity_approved={shot.continuity_approved} "
+            "(generation does not approve continuity)"
+        )
+        return
+
+    if action == "approve-shot":
+        shot = inspection.approve_shot_continuity(
+            project, args.shot, approved_by=args.by
+        )
+        project.save(root)
+        print(
+            f"Shot {shot.id}: continuity_approved={shot.continuity_approved} "
+            f"status={shot.continuity_status}"
+        )
+        return
+
+    raise SystemExit(f"Unknown inspect action: {action}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="continuum")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -695,6 +761,52 @@ def build_parser() -> argparse.ArgumentParser:
     p_ae.add_argument("--id", required=True, help="exception_id")
     p_ae.add_argument("--by", default="jay", help="Approver name (default jay)")
     p_ae.set_defaults(func=cmd_ledger)
+
+    p_insp = sub.add_parser("inspect", help="Continuity inspection engine (Stage 5)")
+    insp_sub = p_insp.add_subparsers(dest="inspect_action", required=True)
+
+    p_ir = insp_sub.add_parser("run", help="Run inspection over shots + ledger")
+    p_ir.add_argument("slug")
+    p_ir.add_argument(
+        "--keep",
+        action="store_true",
+        help="Keep prior checks (default clears non-override checks)",
+    )
+    p_ir.set_defaults(func=cmd_inspect)
+
+    p_il = insp_sub.add_parser("list", help="Summarize checks and reports")
+    p_il.add_argument("slug")
+    p_il.set_defaults(func=cmd_inspect)
+
+    p_is = insp_sub.add_parser("show", help="Show one check")
+    p_is.add_argument("slug")
+    p_is.add_argument("--id", required=True, help="check_id")
+    p_is.set_defaults(func=cmd_inspect)
+
+    p_io = insp_sub.add_parser("override", help="Human override a check")
+    p_io.add_argument("slug")
+    p_io.add_argument("--id", required=True, help="check_id")
+    p_io.add_argument("--reason", required=True)
+    p_io.add_argument("--by", default="jay")
+    p_io.set_defaults(func=cmd_inspect)
+
+    p_ig = insp_sub.add_parser(
+        "mark-generated",
+        help="Mark shot generation complete (does NOT approve continuity)",
+    )
+    p_ig.add_argument("slug")
+    p_ig.add_argument("--shot", required=True)
+    p_ig.add_argument("--clear", action="store_true", help="Clear generation_complete")
+    p_ig.set_defaults(func=cmd_inspect)
+
+    p_ia = insp_sub.add_parser(
+        "approve-shot",
+        help="Explicit human continuity approval for a shot",
+    )
+    p_ia.add_argument("slug")
+    p_ia.add_argument("--shot", required=True)
+    p_ia.add_argument("--by", default="jay")
+    p_ia.set_defaults(func=cmd_inspect)
 
     return parser
 
