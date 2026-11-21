@@ -1,10 +1,12 @@
-# Silent Film Remake — Phase 1: Shot List & Storyboard Generator
+# Continuum — Phase 1: Shot List & Storyboard Generator
 
-Turns a silent film `.mp4` into a director-ready shot list + storyboard package,
-following the methodology in [ai-direction-guide.md](ai-direction-guide.md): pull
-reference frames, lock a style phrase, build a shot list anchored to those
-references, and fill a fixed prompt template you paste into Seedance/Veo3/Kling
-(or any other tool) yourself. No video is generated automatically in this phase.
+**Continuum** is an open-source AI Continuity and Production Engine (in progress). Phase 1 turns a source `.mp4` into a director-ready shot list + storyboard package, following the methodology in [ai-direction-guide.md](ai-direction-guide.md): pull reference frames, lock a style phrase, build a shot list anchored to those references, and fill a fixed prompt template you paste into Seedance/Veo3/Kling (or any other tool) yourself. No video is generated automatically in this phase.
+
+```
+python -m continuum <command> <slug> [options]
+```
+
+Repo: https://github.com/jenishrankca/Continuum
 
 ## Setup
 
@@ -24,18 +26,18 @@ ffmpeg is **not required** — frame extraction uses OpenCV's own decoder.
 ## Workflow
 
 ```
-python -m silentremake init <slug> --source <film.mp4> ^
+python -m continuum init <slug> --source <film.mp4> ^
     --style "Eggers-style desaturated 35mm" ^
     --lighting "harsh side lighting, deep shadow" ^
     --grade "35mm film grain, desaturated teal-grey grade" ^
     [--name "Display Name"] [--genre drama|comedy] [--provider manual|gemini|local]
 
-python -m silentremake ingest <slug> [--threshold 27] [--candidates-per-scene 3]
-python -m silentremake review <slug>
-python -m silentremake restyle <slug> [--provider manual|gemini|local] [--check]
-python -m silentremake shots <slug>
-python -m silentremake generate-shotlist <slug> [--strict]
-python -m silentremake status <slug>
+python -m continuum ingest <slug> [--threshold 27] [--candidates-per-scene 3]
+python -m continuum review <slug>
+python -m continuum restyle <slug> [--provider manual|gemini|local] [--check]
+python -m continuum shots <slug>
+python -m continuum generate-shotlist <slug> [--strict]
+python -m continuum status <slug>
 ```
 
 1. **init** — creates `projects/<slug>/project.yaml` with your locked style bible.
@@ -83,6 +85,7 @@ Re-running `generate-shotlist` any time (including after hand-editing
 
 No API calls generate actual video clips. You take `shotlist.md` /
 `storyboard.html` into Seedance / Veo3 / Kling / CapCut yourself, per the
-guide. A later phase could add direct video-gen API calls on top of this same
-project data — the schema (`schema_version` field, additive-only) is designed
-to support that without a rewrite.
+guide. Later Continuum stages add continuity ledger, local image/video
+generation, inspection, and film assembly on top of this same project data —
+the schema (`schema_version` field, additive-only) is designed to support that
+without a rewrite.

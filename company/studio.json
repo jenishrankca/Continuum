@@ -1,0 +1,18 @@
+{
+  "project": "Continuum",
+  "dashboard_url": "",
+  "dates": { "beta": "", "launch": "" },
+  "kpi_sources": {
+    "product": "python -m continuum status <slug>; lint via generate-shotlist --strict; open bugs on the board",
+    "marketing": "follower and view counts Jay shares",
+    "business": "company/costs.md"
+  },
+  "checkers": { "facts": "", "domain_engineers": ["shotlist-engineer"] },
+  "plans": [
+    "Project store docs/project-vision.md",
+    "Project store docs/implementation-proposal.md"
+  ],
+  "local_root": "C:\\Users\\jenis\\App\\Continuum",
+  "studio_repo": "C:\\Users\\jenis\\App\\IWantThatApp-Studio"
+}
+
